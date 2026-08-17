@@ -32,6 +32,15 @@ final class ProcessTapController {
     private nonisolated(unsafe) var callbackID: UInt32 = 0
     private var nextCallbackID: UInt32 = 0
 
+    // One-time buffer-shape diagnostics captured on the RT thread's first callback (plain
+    // value writes only, no allocation), read later from the main thread to log the tap's
+    // actual input buffer layout — helps tell a real tapped-audio buffer apart from a
+    // silent placeholder buffer contributed by the aggregate's clock sub-device.
+    private nonisolated(unsafe) var diagCaptured = false
+    private nonisolated(unsafe) var diagBufferCount = 0
+    private nonisolated(unsafe) var diagChannels: (Int, Int, Int, Int) = (0, 0, 0, 0)
+    private nonisolated(unsafe) var diagByteSizes: (Int, Int, Int, Int) = (0, 0, 0, 0)
+
     init(app: AudioApp, audioFeed: AudioFeed) {
         self.app = app
         self.audioFeed = audioFeed
@@ -117,6 +126,32 @@ final class ProcessTapController {
 
         activated = true
         logger.info("Tap activated for \(self.app.name, privacy: .public)")
+
+        queue.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            guard let self, let diag = self.consumeDiagnosticsIfReady() else { return }
+            let shape = """
+                buffers=\(diag.bufferCount) \
+                channels=(\(diag.channels.0),\(diag.channels.1),\(diag.channels.2),\(diag.channels.3)) \
+                byteSizes=(\(diag.byteSizes.0),\(diag.byteSizes.1),\(diag.byteSizes.2),\(diag.byteSizes.3))
+                """
+            // `processAudioCallback` assumes the tap's own audio is always the *last*
+            // buffer and always 2-channel (guaranteed by requesting a stereo mixdown tap
+            // with exactly one sub-device + one tap in the aggregate). If a future macOS
+            // version or app ever violates that, this makes it loud instead of silent.
+            let allChannels = [diag.channels.0, diag.channels.1, diag.channels.2, diag.channels.3]
+            let lastChannels = (1...4).contains(diag.bufferCount) ? allChannels[diag.bufferCount - 1] : -1
+            if diag.bufferCount != 2 || lastChannels != 2 {
+                self.logger.warning("Tap input buffer shape is unexpected, audio capture may be broken: \(shape, privacy: .public)")
+            } else {
+                self.logger.debug("Tap input buffer shape: \(shape, privacy: .public)")
+            }
+        }
+    }
+
+    /// Returns the buffer shape captured by the first RT callback, if it's arrived yet.
+    private func consumeDiagnosticsIfReady() -> (bufferCount: Int, channels: (Int, Int, Int, Int), byteSizes: (Int, Int, Int, Int))? {
+        guard diagCaptured else { return nil }
+        return (diagBufferCount, diagChannels, diagByteSizes)
     }
 
     /// Safe to call multiple times, subsequent calls are no-ops.
@@ -146,13 +181,34 @@ final class ProcessTapController {
         // SAFETY: mutable cast required by the API; we only read through this pointer.
         let inputBuffers = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: inputBufferList))
 
+        if !diagCaptured {
+            var channels = (0, 0, 0, 0)
+            var byteSizes = (0, 0, 0, 0)
+            for (index, buf) in inputBuffers.enumerated() where index < 4 {
+                switch index {
+                case 0: channels.0 = Int(buf.mNumberChannels); byteSizes.0 = Int(buf.mDataByteSize)
+                case 1: channels.1 = Int(buf.mNumberChannels); byteSizes.1 = Int(buf.mDataByteSize)
+                case 2: channels.2 = Int(buf.mNumberChannels); byteSizes.2 = Int(buf.mDataByteSize)
+                case 3: channels.3 = Int(buf.mNumberChannels); byteSizes.3 = Int(buf.mDataByteSize)
+                default: break
+                }
+            }
+            diagBufferCount = inputBuffers.count
+            diagChannels = channels
+            diagByteSizes = byteSizes
+            diagCaptured = true
+        }
+
         for (index, inputBuffer) in inputBuffers.enumerated() {
             guard let inputData = inputBuffer.mData else { continue }
             let channels = Int(inputBuffer.mNumberChannels)
             let byteSize = Int(inputBuffer.mDataByteSize)
             let sampleCount = byteSize / MemoryLayout<Float>.size
 
-            if channels == 2 {
+            // Only the last buffer is the tap's own audio; earlier buffers correspond to
+            // the aggregate's sub-devices (here, just the clock-source device) and carry
+            // silence, not real signal.
+            if index == inputBuffers.count - 1, channels == 2 {
                 let samples = inputData.assumingMemoryBound(to: Float.self)
                 feed.write(samples: samples, sampleCount: sampleCount)
             }

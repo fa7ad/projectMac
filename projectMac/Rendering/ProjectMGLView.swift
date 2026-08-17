@@ -20,6 +20,10 @@ final class ProjectMGLView: NSOpenGLView {
     private nonisolated(unsafe) var frameCount = 0
     private nonisolated(unsafe) var lastFPSSampleTime = CFAbsoluteTimeGetCurrent()
 
+    // Audio peak accumulated between FPS samples, only ever touched from the
+    // CVDisplayLink thread.
+    private nonisolated(unsafe) var peakSinceLastSample: Float = 0
+
     static func makePixelFormat() -> NSOpenGLPixelFormat {
         let attrs: [NSOpenGLPixelFormatAttribute] = [
             UInt32(NSOpenGLPFAOpenGLProfile), UInt32(NSOpenGLProfileVersion3_2Core),
@@ -44,9 +48,10 @@ final class ProjectMGLView: NSOpenGLView {
             // throttle or otherwise affect this render loop's actual cadence, which
             // CVDisplayLink drives at the display's native rate.
             projectm_set_fps(pm, 60)
+            logger.debug("projectm_pcm_get_max_samples() = \(projectm_pcm_get_max_samples())")
             let manager = PresetManager(pm: pm, glContext: ctx)
             coordinator.attach(presetManager: manager)
-            manager.start()
+            manager.start(shuffle: UserDefaults.standard.bool(forKey: AppSettingsKeys.shufflePresets))
             coordinator.applyPersistedSettings()
         }
         startDisplayLink()
@@ -85,10 +90,20 @@ final class ProjectMGLView: NSOpenGLView {
         ctx.lock()
         ctx.makeCurrentContext()
         coordinator.audioFeed.drainInto(pm: pm)
+        peakSinceLastSample = max(peakSinceLastSample, coordinator.audioFeed.consumePeakLevel())
         if let fps = sampleFPS() {
             let stats = coordinator.renderStats
+            let peak = peakSinceLastSample
+            let overflows = coordinator.audioFeed.totalOverflowCount
+            let backlog = coordinator.audioFeed.backlogFrames
+            let capacityFrames = coordinator.audioFeed.capacityFrames
+            peakSinceLastSample = 0
             DispatchQueue.main.async {
                 stats.fps = fps
+                stats.audioPeakLevel = peak
+                stats.audioOverflowCount = overflows
+                stats.audioBacklogFrames = backlog
+                stats.audioCapacityFrames = capacityFrames
             }
         }
         projectm_opengl_render_frame(pm)

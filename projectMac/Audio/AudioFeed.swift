@@ -16,6 +16,13 @@ final class AudioFeed: @unchecked Sendable {
     private nonisolated(unsafe) var writeIndex: Int = 0
     private nonisolated(unsafe) var readIndex: Int = 0
 
+    // Debug-only diagnostics for the on-screen overlay. `peakLevel` is written by the
+    // producer (raised to the loudest sample seen) and reset by the consumer via
+    // `consumePeakLevel()`; `overflowCount` is written only by the producer. Neither is
+    // locked — losing an update to a race is harmless for a diagnostic meter.
+    private nonisolated(unsafe) var peakLevel: Float = 0
+    private nonisolated(unsafe) var overflowCount: Int = 0
+
     /// `capacityFrames` stereo frames (2 floats/frame). Default ~93ms at 44.1kHz.
     init(capacityFrames: Int = 4096) {
         capacity = capacityFrames * 2
@@ -38,13 +45,42 @@ final class AudioFeed: @unchecked Sendable {
         let used = write - readIndex
         let free = capacity - used
         let count = min(sampleCount, free)
-        guard count > 0 else { return }
-
-        for i in 0..<count {
-            buffer[(write + i) % capacity] = samples[i]
+        guard count > 0 else {
+            if sampleCount > 0 { overflowCount += 1 }
+            return
         }
+
+        var peak: Float = 0
+        for i in 0..<count {
+            let sample = samples[i]
+            buffer[(write + i) % capacity] = sample
+            let magnitude = abs(sample)
+            if magnitude > peak { peak = magnitude }
+        }
+        if peak > peakLevel { peakLevel = peak }
         writeIndex = write + count
+
+        if count < sampleCount {
+            overflowCount += 1
+        }
     }
+
+    /// Called from the render thread. Returns the peak sample magnitude seen since the
+    /// last call and resets it.
+    func consumePeakLevel() -> Float {
+        let level = peakLevel
+        peakLevel = 0
+        return level
+    }
+
+    /// Cumulative count of `write` calls that dropped samples because the buffer was full.
+    var totalOverflowCount: Int { overflowCount }
+
+    /// Stereo frames currently queued (written but not yet drained), and the buffer's
+    /// total capacity in frames. Diagnostic only — read from either thread without
+    /// synchronization, same rationale as `peakLevel`.
+    var backlogFrames: Int { (writeIndex - readIndex) / 2 }
+    var capacityFrames: Int { capacity / 2 }
 
     /// Called from the render thread, once per frame. Drains up to
     /// `projectm_pcm_get_max_samples()` stereo frames into projectM.

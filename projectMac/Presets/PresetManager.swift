@@ -21,7 +21,12 @@ final class PresetManager {
         self.glContext = glContext
     }
 
-    func start() {
+    /// `shuffle` must be applied before the initial `play_next` below, since that call is
+    /// what decides whether the first-ever preset is picked randomly or deterministically
+    /// (always whatever landed first when the paths were scanned) — applying it only
+    /// afterwards, e.g. from `AppCoordinator.applyPersistedSettings()`, is too late for
+    /// this first pick.
+    func start(shuffle: Bool) {
         guard let playlist = projectm_playlist_create(pm) else { return }
         self.playlist = playlist
 
@@ -32,10 +37,30 @@ final class PresetManager {
             projectm_playlist_add_path(playlist, texturesPath, true, false)
         }
 
+        // Without this, `onPresetChanged` would only ever fire from nextPreset()/
+        // prevPreset()/etc. below, missing projectM's own automatic switches (preset
+        // duration timeout, beat-driven hard cuts) — the displayed preset name would go
+        // stale the moment the engine advances on its own.
+        projectm_playlist_set_preset_switched_event_callback(playlist, Self.presetSwitchedCallback, Unmanaged.passUnretained(self).toOpaque())
+
+        setShuffle(shuffle)
+
         withLock {
             projectm_playlist_play_next(playlist, true)
         }
         reportCurrentPreset()
+    }
+
+    /// Fires on *any* preset switch, not just ones made through this class. Automatic
+    /// switches happen inside `projectm_opengl_render_frame`, so this runs on the
+    /// CVDisplayLink render thread in that case (vs. the main thread for
+    /// start()/nextPreset()/etc.) — safe without extra locking because both paths are
+    /// already serialized by the same GL context lock (`withLock` here, `ctx.lock()`
+    /// around the render call in `ProjectMGLView`). `reportCurrentPreset` hops to main
+    /// before touching `onPresetChanged`, since it drives `@Observable` state.
+    private static let presetSwitchedCallback: projectm_playlist_preset_switched_event = { _, _, userData in
+        guard let userData else { return }
+        Unmanaged<PresetManager>.fromOpaque(userData).takeUnretainedValue().reportCurrentPreset()
     }
 
     func nextPreset() {
@@ -99,11 +124,15 @@ final class PresetManager {
         guard let cString = projectm_playlist_item(playlist, position) else { return }
         let path = String(cString: cString)
         projectm_playlist_free_string(cString)
-        onPresetChanged((path as NSString).lastPathComponent)
+        let name = (path as NSString).lastPathComponent
+        RunLoop.main.perform {
+            onPresetChanged(name)
+        }
     }
 
     deinit {
         if let playlist {
+            projectm_playlist_set_preset_switched_event_callback(playlist, nil, nil)
             projectm_playlist_destroy(playlist)
         }
     }

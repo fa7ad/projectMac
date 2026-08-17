@@ -13,6 +13,13 @@ struct DebugOverlayView: View {
                     .truncationMode(.middle)
             }
             Text(stats.tappedAppName.map { "Tapping: \($0)" } ?? "No audio source")
+            Text(String(format: "Audio peak: %.3f", stats.audioPeakLevel))
+                .foregroundStyle(stats.audioPeakLevel > 0.001 ? .green : .white)
+            Text("Buffer: \(stats.audioBacklogFrames)/\(stats.audioCapacityFrames) frames")
+            if stats.audioOverflowCount > 0 {
+                Text("Buffer overflows: \(stats.audioOverflowCount)")
+                    .foregroundStyle(.orange)
+            }
         }
         .font(.system(.caption, design: .monospaced))
         .foregroundStyle(.white)

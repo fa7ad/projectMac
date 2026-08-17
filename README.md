@@ -70,6 +70,13 @@ Or from the command line: `./build.sh` (Debug by default; pass `Release` for a r
 `project.yml` is the source of truth for the Xcode project, re-run `xcodegen generate`
 after editing it rather than hand-editing `projectMac.xcodeproj`.
 
+### Packaging a DMG
+
+`./package.sh [version]` builds a Release configuration and packages it into
+`dist/projectMac-<version>.dmg` (version defaults to `git describe` if omitted). Pushing
+a `v*` tag (e.g. `v0.2.0`) also runs this via the [Release workflow](.github/workflows/release.yml),
+attaching the resulting DMG to a GitHub Release automatically.
+
 ### Signing & entitlements
 
 Process taps require App Sandbox off and the `com.apple.security.device.audio-input`

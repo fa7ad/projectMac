@@ -1,0 +1,43 @@
+name: Setup build
+description: >
+  Installs cmake/xcodegen and builds libprojectM 4.x from source into /usr/local,
+  cached by the upstream repo's current commit SHA.
+
+runs:
+  using: composite
+  steps:
+    - name: Install build tools
+      shell: bash
+      run: |
+        export HOMEBREW_NO_AUTO_UPDATE=1
+        brew install cmake xcodegen
+
+    - name: Resolve libprojectM commit
+      id: projectm-rev
+      shell: bash
+      run: |
+        echo "sha=$(git ls-remote https://github.com/projectM-visualizer/projectm.git HEAD | cut -f1)" >> "$GITHUB_OUTPUT"
+
+    - name: Cache libprojectM build
+      id: cache-libprojectm
+      uses: actions/cache@v4
+      with:
+        path: |
+          /usr/local/include/projectM-4
+          /usr/local/lib/libprojectM-4.a
+          /usr/local/lib/libprojectM-4-playlist.a
+        key: libprojectm-${{ runner.os }}-${{ steps.projectm-rev.outputs.sha }}
+
+    - name: Build libprojectM 4.x from source
+      if: steps.cache-libprojectm.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        mkdir -p vendor && cd vendor
+        git clone https://github.com/projectM-visualizer/projectm.git
+        cd projectm && git submodule update --init
+        mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+          -DBUILD_SHARED_LIBS=OFF -DENABLE_PLAYLIST=ON -DENABLE_TESTING=OFF -DENABLE_SDL_UI=OFF \
+          -DCMAKE_OSX_DEPLOYMENT_TARGET=14.2
+        cmake --build . --parallel
+        sudo cmake --install .

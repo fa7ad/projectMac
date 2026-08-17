@@ -19,42 +19,7 @@ jobs:
         with:
           xcode-version: "15.4"
 
-      - name: Install build tools
-        run: |
-          export HOMEBREW_NO_AUTO_UPDATE=1
-          brew install cmake xcodegen
-
-      # libprojectM isn't vendored in this repo (see README) and Homebrew's cask is an
-      # old 3.x with a C++-only API, so it's built from source into /usr/local on every
-      # run. Cached by commit SHA of the upstream repo so a new upstream commit rebuilds,
-      # not on every run of this workflow.
-      - name: Resolve libprojectM commit
-        id: projectm-rev
-        run: |
-          echo "sha=$(git ls-remote https://github.com/projectM-visualizer/projectm.git HEAD | cut -f1)" >> "$GITHUB_OUTPUT"
-
-      - name: Cache libprojectM build
-        id: cache-libprojectm
-        uses: actions/cache@v4
-        with:
-          path: |
-            /usr/local/include/projectM-4
-            /usr/local/lib/libprojectM-4.a
-            /usr/local/lib/libprojectM-4-playlist.a
-          key: libprojectm-${{ runner.os }}-${{ steps.projectm-rev.outputs.sha }}
-
-      - name: Build libprojectM 4.x from source
-        if: steps.cache-libprojectm.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p vendor && cd vendor
-          git clone https://github.com/projectM-visualizer/projectm.git
-          cd projectm && git submodule update --init
-          mkdir build && cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
-            -DBUILD_SHARED_LIBS=OFF -DENABLE_PLAYLIST=ON -DENABLE_TESTING=OFF -DENABLE_SDL_UI=OFF \
-            -DCMAKE_OSX_DEPLOYMENT_TARGET=14.2
-          cmake --build . --parallel
-          sudo cmake --install .
+      - uses: ./.github/actions/setup-build
 
       # Presets/textures are fetched fresh from upstream (see fetch-resources.sh) and are
       # not needed to verify the app compiles and links, so empty placeholders stand in

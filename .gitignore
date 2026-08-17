@@ -3,6 +3,7 @@ projectMac/Resources/Presets/
 projectMac/Resources/Textures/
 vendor/
 build/
+dist/
 DerivedData/
 .DS_Store
 *.xcuserstate

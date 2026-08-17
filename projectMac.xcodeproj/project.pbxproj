@@ -1,0 +1,492 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0364301F756B0FA4F6734001 /* AppCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7968EDB2F208EA5D68D2F53 /* AppCoordinator.swift */; };
+		07F1340F1A9B63740D6B0D28 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E0EF34A472A572AAA4B7C0C2 /* AudioToolbox.framework */; };
+		0ACE38119D2515C1C59EAFFE /* RenderStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BC751495B7B217BB5885958 /* RenderStats.swift */; };
+		2176C63DE83FF11C774324D3 /* LoadingOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C940D4086322443387255EB7 /* LoadingOverlayView.swift */; };
+		230E8AD0C2CCBB60F3CA731B /* PresetManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDEBE2F01E5F07A0F5C7E18F /* PresetManager.swift */; };
+		2C9C325739CCF0FA6D2FFA89 /* AudioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F2B9DD1BC759D30B0B9BBFB /* AudioApp.swift */; };
+		3DE2C4C912ED61FD5722AA03 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3AB3F22010C317AB17582469 /* Assets.xcassets */; };
+		58ADFD0B2464A3F66BF41004 /* ProjectMViewRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B46DA5167DA290CB71BBC15 /* ProjectMViewRepresentable.swift */; };
+		624780E650A39E063138FCAB /* DebugOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEC64E855BEE28F22E040271 /* DebugOverlayView.swift */; };
+		6AE11A4F26968C7E10C7C9EE /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AFB7C76485D87754950E3DFD /* CoreAudio.framework */; };
+		81E7F1428DED46250BD502D6 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5A9B33401E546EFA6347A6D8 /* AVFoundation.framework */; };
+		85D73E2A449731E122183F07 /* AppSettingsKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7586C03F8E60484DBB54590 /* AppSettingsKeys.swift */; };
+		8742EEE0CD4BE679C973797C /* CoreAudioExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D97E7379DC1E39A879EFCD /* CoreAudioExtensions.swift */; };
+		99709582C3F5C74A40808FFC /* projectMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAFB6E6B9D926A4DBC815C1A /* projectMacApp.swift */; };
+		9CA5FB9477567EDF98BF6BD7 /* AudioFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C50285D4AFC57F4FC97846D /* AudioFeed.swift */; };
+		A8F6F494CBE2B5EBC43177B3 /* AudioAppMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB0ED0F294D60A71CCA433D /* AudioAppMonitor.swift */; };
+		B56FCF1D57B56A9BCA83B11D /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBE1244B292E31110D11ECF0 /* SettingsView.swift */; };
+		BE64AB2B960C501A40A87D3B /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D046BDAADB25FF1DDD2263B3 /* OpenGL.framework */; };
+		C41148EFF4BFE568CF2BB1CD /* ProjectMGLView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8678923C4766918FDA5E2909 /* ProjectMGLView.swift */; };
+		C4892C6EB0B0B26520D77C05 /* ProcessTapController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7291DF9CE47D314A3CE4ADA1 /* ProcessTapController.swift */; };
+		FC1F2EA4F65EB06426AFA962 /* TapResources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E5A55BF116FCEB40A59904A /* TapResources.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		352B1F03A05CF0AD0825F07A /* projectMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = projectMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3AB3F22010C317AB17582469 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		4BB0ED0F294D60A71CCA433D /* AudioAppMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAppMonitor.swift; sourceTree = "<group>"; };
+		5A9B33401E546EFA6347A6D8 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
+		5E127A08007AF2E6F6FAAAFA /* projectMac.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = projectMac.entitlements; sourceTree = "<group>"; };
+		6E5A55BF116FCEB40A59904A /* TapResources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapResources.swift; sourceTree = "<group>"; };
+		6F2B9DD1BC759D30B0B9BBFB /* AudioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioApp.swift; sourceTree = "<group>"; };
+		7291DF9CE47D314A3CE4ADA1 /* ProcessTapController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTapController.swift; sourceTree = "<group>"; };
+		8678923C4766918FDA5E2909 /* ProjectMGLView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectMGLView.swift; sourceTree = "<group>"; };
+		8BC751495B7B217BB5885958 /* RenderStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenderStats.swift; sourceTree = "<group>"; };
+		9B46DA5167DA290CB71BBC15 /* ProjectMViewRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectMViewRepresentable.swift; sourceTree = "<group>"; };
+		9C2ECF1BF711F3A8585B07C4 /* projectm-bridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "projectm-bridge.h"; sourceTree = "<group>"; };
+		9C50285D4AFC57F4FC97846D /* AudioFeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioFeed.swift; sourceTree = "<group>"; };
+		A1D97E7379DC1E39A879EFCD /* CoreAudioExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreAudioExtensions.swift; sourceTree = "<group>"; };
+		AFB7C76485D87754950E3DFD /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
+		B7586C03F8E60484DBB54590 /* AppSettingsKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettingsKeys.swift; sourceTree = "<group>"; };
+		C940D4086322443387255EB7 /* LoadingOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingOverlayView.swift; sourceTree = "<group>"; };
+		CDEBE2F01E5F07A0F5C7E18F /* PresetManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresetManager.swift; sourceTree = "<group>"; };
+		D046BDAADB25FF1DDD2263B3 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
+		E0EF34A472A572AAA4B7C0C2 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
+		EBE1244B292E31110D11ECF0 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		EEC64E855BEE28F22E040271 /* DebugOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugOverlayView.swift; sourceTree = "<group>"; };
+		F7968EDB2F208EA5D68D2F53 /* AppCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCoordinator.swift; sourceTree = "<group>"; };
+		FAFB6E6B9D926A4DBC815C1A /* projectMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = projectMacApp.swift; sourceTree = "<group>"; };
+		FE1BC8FE8F52E22296860FA4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		B34C205B60741CC553901A23 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BE64AB2B960C501A40A87D3B /* OpenGL.framework in Frameworks */,
+				6AE11A4F26968C7E10C7C9EE /* CoreAudio.framework in Frameworks */,
+				07F1340F1A9B63740D6B0D28 /* AudioToolbox.framework in Frameworks */,
+				81E7F1428DED46250BD502D6 /* AVFoundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		495208AD46AE6D460911229C /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		61BF34095C08E5B0CC417993 /* Presets */ = {
+			isa = PBXGroup;
+			children = (
+				CDEBE2F01E5F07A0F5C7E18F /* PresetManager.swift */,
+			);
+			path = Presets;
+			sourceTree = "<group>";
+		};
+		80989B30F70FF99C462CF683 /* projectMac */ = {
+			isa = PBXGroup;
+			children = (
+				F7968EDB2F208EA5D68D2F53 /* AppCoordinator.swift */,
+				3AB3F22010C317AB17582469 /* Assets.xcassets */,
+				FE1BC8FE8F52E22296860FA4 /* Info.plist */,
+				5E127A08007AF2E6F6FAAAFA /* projectMac.entitlements */,
+				FAFB6E6B9D926A4DBC815C1A /* projectMacApp.swift */,
+				8BC751495B7B217BB5885958 /* RenderStats.swift */,
+				E0687427DA5EE2E3054CE1A0 /* Audio */,
+				EAE251805D68F28CF267B19C /* Bridge */,
+				61BF34095C08E5B0CC417993 /* Presets */,
+				E92B0BE58AF2EB92211AC311 /* Rendering */,
+				495208AD46AE6D460911229C /* Resources */,
+				8FEAEAC8D51C4A87BBB44EF3 /* Settings */,
+			);
+			path = projectMac;
+			sourceTree = "<group>";
+		};
+		8FEAEAC8D51C4A87BBB44EF3 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				B7586C03F8E60484DBB54590 /* AppSettingsKeys.swift */,
+				EBE1244B292E31110D11ECF0 /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		A369414ECCEAC75B0061F52C = {
+			isa = PBXGroup;
+			children = (
+				80989B30F70FF99C462CF683 /* projectMac */,
+				ACB5956E0F66E6CAD2A4AC67 /* Frameworks */,
+				F55ADC13C67AFAD02EBEC2D9 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		ACB5956E0F66E6CAD2A4AC67 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				E0EF34A472A572AAA4B7C0C2 /* AudioToolbox.framework */,
+				5A9B33401E546EFA6347A6D8 /* AVFoundation.framework */,
+				AFB7C76485D87754950E3DFD /* CoreAudio.framework */,
+				D046BDAADB25FF1DDD2263B3 /* OpenGL.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		E0687427DA5EE2E3054CE1A0 /* Audio */ = {
+			isa = PBXGroup;
+			children = (
+				6F2B9DD1BC759D30B0B9BBFB /* AudioApp.swift */,
+				4BB0ED0F294D60A71CCA433D /* AudioAppMonitor.swift */,
+				9C50285D4AFC57F4FC97846D /* AudioFeed.swift */,
+				A1D97E7379DC1E39A879EFCD /* CoreAudioExtensions.swift */,
+				7291DF9CE47D314A3CE4ADA1 /* ProcessTapController.swift */,
+				6E5A55BF116FCEB40A59904A /* TapResources.swift */,
+			);
+			path = Audio;
+			sourceTree = "<group>";
+		};
+		E92B0BE58AF2EB92211AC311 /* Rendering */ = {
+			isa = PBXGroup;
+			children = (
+				EEC64E855BEE28F22E040271 /* DebugOverlayView.swift */,
+				C940D4086322443387255EB7 /* LoadingOverlayView.swift */,
+				8678923C4766918FDA5E2909 /* ProjectMGLView.swift */,
+				9B46DA5167DA290CB71BBC15 /* ProjectMViewRepresentable.swift */,
+			);
+			path = Rendering;
+			sourceTree = "<group>";
+		};
+		EAE251805D68F28CF267B19C /* Bridge */ = {
+			isa = PBXGroup;
+			children = (
+				9C2ECF1BF711F3A8585B07C4 /* projectm-bridge.h */,
+			);
+			path = Bridge;
+			sourceTree = "<group>";
+		};
+		F55ADC13C67AFAD02EBEC2D9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				352B1F03A05CF0AD0825F07A /* projectMac.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		E144E1C111B1544085E79C4A /* projectMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 99C4D0D317F77121F9CDB866 /* Build configuration list for PBXNativeTarget "projectMac" */;
+			buildPhases = (
+				4653C45383315CA74F7DB852 /* Sources */,
+				A94888DAA9F9996767136E4D /* Resources */,
+				B34C205B60741CC553901A23 /* Frameworks */,
+				03A3FDF0BC58164F548F38E8 /* Sync Presets & Textures */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = projectMac;
+			packageProductDependencies = (
+			);
+			productName = projectMac;
+			productReference = 352B1F03A05CF0AD0825F07A /* projectMac.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		5CB39DDE264A28DB725A253F /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					E144E1C111B1544085E79C4A = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 23ECDB1130DACF97786D911D /* Build configuration list for PBXProject "projectMac" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = A369414ECCEAC75B0061F52C;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = F55ADC13C67AFAD02EBEC2D9 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				E144E1C111B1544085E79C4A /* projectMac */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A94888DAA9F9996767136E4D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3DE2C4C912ED61FD5722AA03 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		03A3FDF0BC58164F548F38E8 /* Sync Presets & Textures */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Sync Presets & Textures";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -euo pipefail\nDEST=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"\nmkdir -p \"$DEST/Presets\" \"$DEST/Textures\"\nrsync -a --delete \"${SRCROOT}/projectMac/Resources/Presets/\" \"$DEST/Presets/\"\nrsync -a --delete \"${SRCROOT}/projectMac/Resources/Textures/\" \"$DEST/Textures/\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		4653C45383315CA74F7DB852 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0364301F756B0FA4F6734001 /* AppCoordinator.swift in Sources */,
+				85D73E2A449731E122183F07 /* AppSettingsKeys.swift in Sources */,
+				2C9C325739CCF0FA6D2FFA89 /* AudioApp.swift in Sources */,
+				A8F6F494CBE2B5EBC43177B3 /* AudioAppMonitor.swift in Sources */,
+				9CA5FB9477567EDF98BF6BD7 /* AudioFeed.swift in Sources */,
+				8742EEE0CD4BE679C973797C /* CoreAudioExtensions.swift in Sources */,
+				624780E650A39E063138FCAB /* DebugOverlayView.swift in Sources */,
+				2176C63DE83FF11C774324D3 /* LoadingOverlayView.swift in Sources */,
+				230E8AD0C2CCBB60F3CA731B /* PresetManager.swift in Sources */,
+				C4892C6EB0B0B26520D77C05 /* ProcessTapController.swift in Sources */,
+				C41148EFF4BFE568CF2BB1CD /* ProjectMGLView.swift in Sources */,
+				58ADFD0B2464A3F66BF41004 /* ProjectMViewRepresentable.swift in Sources */,
+				0ACE38119D2515C1C59EAFFE /* RenderStats.swift in Sources */,
+				B56FCF1D57B56A9BCA83B11D /* SettingsView.swift in Sources */,
+				FC1F2EA4F65EB06426AFA962 /* TapResources.swift in Sources */,
+				99709582C3F5C74A40808FFC /* projectMacApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		3238EDA3730C5467B34F94BE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = projectMac/projectMac.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = projectMac/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.2;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.projectmac.app;
+				PRODUCT_NAME = projectMac;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		63FB307E062FC18DE940D5EB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = projectMac/projectMac.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = projectMac/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.2;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.projectmac.app;
+				PRODUCT_NAME = projectMac;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		7970707E146CAC218306A42C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = /usr/local/include;
+				LIBRARY_SEARCH_PATHS = /usr/local/lib;
+				MACOSX_DEPLOYMENT_TARGET = 14.2;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				OTHER_LDFLAGS = "-lprojectM-4 -lprojectM-4-playlist -lc++";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OBJC_BRIDGING_HEADER = "projectMac/Bridge/projectm-bridge.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		8F0E1C701B9C77044149712F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = /usr/local/include;
+				LIBRARY_SEARCH_PATHS = /usr/local/lib;
+				MACOSX_DEPLOYMENT_TARGET = 14.2;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				OTHER_LDFLAGS = "-lprojectM-4 -lprojectM-4-playlist -lc++";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OBJC_BRIDGING_HEADER = "projectMac/Bridge/projectm-bridge.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		23ECDB1130DACF97786D911D /* Build configuration list for PBXProject "projectMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7970707E146CAC218306A42C /* Debug */,
+				8F0E1C701B9C77044149712F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		99C4D0D317F77121F9CDB866 /* Build configuration list for PBXNativeTarget "projectMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				63FB307E062FC18DE940D5EB /* Debug */,
+				3238EDA3730C5467B34F94BE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 5CB39DDE264A28DB725A253F /* Project object */;
+}

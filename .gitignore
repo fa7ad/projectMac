@@ -1,0 +1,10 @@
+PLAN.md
+projectMac/Resources/Presets/
+projectMac/Resources/Textures/
+vendor/
+build/
+DerivedData/
+.DS_Store
+*.xcuserstate
+xcuserdata/
+*.swp

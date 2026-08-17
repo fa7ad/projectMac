@@ -1,0 +1,19 @@
+import AppKit
+import CoreAudio
+
+/// A running application currently producing audio output, as discovered via the
+/// CoreAudio HAL process list.
+struct AudioApp: Identifiable, Equatable {
+    let pid: pid_t
+    let name: String
+    let bundleID: String?
+    let icon: NSImage?
+    /// Process object IDs to pass to `CATapDescription(stereoMixdownOfProcesses:)`.
+    let processObjectIDs: [AudioObjectID]
+
+    var id: pid_t { pid }
+
+    static func == (lhs: AudioApp, rhs: AudioApp) -> Bool {
+        lhs.pid == rhs.pid
+    }
+}

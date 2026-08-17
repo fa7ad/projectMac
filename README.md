@@ -1,5 +1,7 @@
 # projectM(ac)
 
+[![Build](https://github.com/fa7ad/projectMac/actions/workflows/build.yml/badge.svg)](https://github.com/fa7ad/projectMac/actions/workflows/build.yml)
+
 > **Personal build.** This is a personal project built for my own use. It is not intended to be useful for anyone other than me.
 
 A native macOS music visualizer. Pick any running app's audio output and watch it drive a
@@ -70,9 +72,9 @@ after editing it rather than hand-editing `projectMac.xcodeproj`.
 
 ### Signing & entitlements
 
-Process taps require App Sandbox off (already configured) and the
-`com.apple.security.device.audio-input` entitlement (already configured). Pick a
-signing team in Xcode's project settings before running on your own machine.
+Process taps require App Sandbox off and the `com.apple.security.device.audio-input`
+entitlement; both are already configured in `project.yml`. Pick a signing team in
+Xcode's project settings before running on your own machine.
 
 ## Architecture
 

@@ -4,10 +4,10 @@ struct SettingsView: View {
     @Environment(AppCoordinator.self) private var coordinator
 
     @AppStorage(AppSettingsKeys.beatSensitivity) private var beatSensitivity: Double = 1.0
-    @AppStorage(AppSettingsKeys.presetDuration) private var presetDuration: Double = 16.0
+    @AppStorage(AppSettingsKeys.presetDuration) private var presetDuration: Double = 15.0
     @AppStorage(AppSettingsKeys.meshSizeX) private var meshSizeX: Int = 96
     @AppStorage(AppSettingsKeys.meshSizeY) private var meshSizeY: Int = 72
-    @AppStorage(AppSettingsKeys.shufflePresets) private var shufflePresets: Bool = true
+    @AppStorage(AppSettingsKeys.shufflePresets) private var shufflePresets: Bool = false
 
     private var meshQualityBinding: Binding<Int> {
         Binding(

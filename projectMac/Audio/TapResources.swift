@@ -28,8 +28,7 @@ nonisolated struct TapResources {
         tapID.isValid || aggregateDeviceID.isValid
     }
 
-    /// Destroys all resources in the correct order to prevent leaks and crashes.
-    /// Safe to call multiple times, invalid IDs are skipped.
+    /// Safe to call multiple times; invalid IDs are skipped.
     mutating func destroy() {
         let aggID = aggregateDeviceID
         let tID = tapID
@@ -67,7 +66,6 @@ nonisolated struct TapResources {
         tapDescription = nil
     }
 
-    /// Destroys resources asynchronously on a background queue.
     /// Clears instance state immediately so new resources can be created without waiting.
     mutating func destroyAsync(on queue: DispatchQueue = .global(qos: .utility), completion: (@Sendable () -> Void)? = nil) {
         let capturedTapID = tapID

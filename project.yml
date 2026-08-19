@@ -34,12 +34,14 @@ targets:
           mkdir -p "$DEST/Presets" "$DEST/Textures"
           rsync -a --delete "${SRCROOT}/projectMac/Resources/Presets/" "$DEST/Presets/"
           rsync -a --delete "${SRCROOT}/projectMac/Resources/Textures/" "$DEST/Textures/"
-        basedOnDependencyAnalysis: false
+        basedOnDependencyAnalysis: true
     info:
       path: projectMac/Info.plist
       properties:
         NSAudioCaptureUsageDescription: projectMac captures audio output from a selected app to drive the visualizer.
         LSApplicationCategoryType: public.app-category.music
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
     entitlements:
       path: projectMac/projectMac.entitlements
       properties:
@@ -48,7 +50,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.projectmac.app
         PRODUCT_NAME: projectMac
-        MARKETING_VERSION: "0.1.0"
+        MARKETING_VERSION: "0.1.1"
         CURRENT_PROJECT_VERSION: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     dependencies:

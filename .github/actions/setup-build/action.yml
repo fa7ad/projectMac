@@ -20,7 +20,7 @@ runs:
 
     - name: Cache libprojectM build
       id: cache-libprojectm
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: |
           /usr/local/include/projectM-4

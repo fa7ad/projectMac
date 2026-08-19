@@ -18,6 +18,16 @@ final class AudioAppMonitor {
         mScope: kAudioObjectPropertyScopeGlobal,
         mElement: kAudioObjectPropertyElementMain
     )
+    /// Per-process listeners for `kAudioProcessPropertyIsRunningOutput`, since the list
+    /// listener above only fires when a process object is added/removed, not when an
+    /// already-registered process (e.g. an app that was already running) starts or stops
+    /// producing audio.
+    private var isRunningOutputAddress = AudioObjectPropertyAddress(
+        mSelector: kAudioProcessPropertyIsRunningOutput,
+        mScope: kAudioObjectPropertyScopeGlobal,
+        mElement: kAudioObjectPropertyElementMain
+    )
+    private var processListenerBlocks: [AudioObjectID: AudioObjectPropertyListenerBlock] = [:]
     private var debounceWorkItem: DispatchWorkItem?
 
     func start() {
@@ -36,6 +46,10 @@ final class AudioAppMonitor {
             AudioObjectRemovePropertyListenerBlock(.system, &address, .main, block)
             listenerBlock = nil
         }
+        for (objectID, block) in processListenerBlocks {
+            AudioObjectRemovePropertyListenerBlock(objectID, &isRunningOutputAddress, .main, block)
+        }
+        processListenerBlocks.removeAll()
         debounceWorkItem?.cancel()
         debounceWorkItem = nil
     }
@@ -51,12 +65,15 @@ final class AudioAppMonitor {
 
     private func refresh() {
         guard let processIDs = try? AudioObjectID.readProcessObjectList() else { return }
+        updateProcessListeners(for: processIDs)
 
+        let ownPID = ProcessInfo.processInfo.processIdentifier
         var apps: [AudioApp] = []
         var seenPIDs = Set<pid_t>()
         for objectID in processIDs {
             guard objectID.readProcessIsRunningOutput() else { continue }
             guard let pid = try? objectID.readProcessPID() else { continue }
+            guard pid != ownPID else { continue }
             guard seenPIDs.insert(pid).inserted else { continue }
             guard let runningApp = NSRunningApplication(processIdentifier: pid) else { continue }
 
@@ -72,5 +89,24 @@ final class AudioAppMonitor {
 
         audioApps = apps.sorted { $0.name < $1.name }
         onAppsChanged?(audioApps)
+    }
+
+    private func updateProcessListeners(for processIDs: [AudioObjectID]) {
+        let currentIDs = Set(processIDs)
+        let trackedIDs = Set(processListenerBlocks.keys)
+
+        for objectID in trackedIDs.subtracting(currentIDs) {
+            if let block = processListenerBlocks.removeValue(forKey: objectID) {
+                AudioObjectRemovePropertyListenerBlock(objectID, &isRunningOutputAddress, .main, block)
+            }
+        }
+
+        for objectID in currentIDs.subtracting(trackedIDs) {
+            let block: AudioObjectPropertyListenerBlock = { [weak self] _, _ in
+                self?.scheduleRefresh()
+            }
+            processListenerBlocks[objectID] = block
+            AudioObjectAddPropertyListenerBlock(objectID, &isRunningOutputAddress, .main, block)
+        }
     }
 }

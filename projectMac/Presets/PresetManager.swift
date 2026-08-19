@@ -21,11 +21,9 @@ final class PresetManager {
         self.glContext = glContext
     }
 
-    /// `shuffle` must be applied before the initial `play_next` below, since that call is
-    /// what decides whether the first-ever preset is picked randomly or deterministically
-    /// (always whatever landed first when the paths were scanned) — applying it only
-    /// afterwards, e.g. from `AppCoordinator.applyPersistedSettings()`, is too late for
-    /// this first pick.
+    /// `shuffle` only governs subsequent next/prev ordering here — the startup preset
+    /// itself is always randomized below regardless of that setting, the same way
+    /// `randomPreset()` ignores it for an explicit one-off jump.
     func start(shuffle: Bool) {
         guard let playlist = projectm_playlist_create(pm) else { return }
         self.playlist = playlist
@@ -45,8 +43,13 @@ final class PresetManager {
 
         setShuffle(shuffle)
 
+        let size = projectm_playlist_size(playlist)
         withLock {
-            projectm_playlist_play_next(playlist, true)
+            if size > 0 {
+                _ = projectm_playlist_set_position(playlist, UInt32.random(in: 0..<size), true)
+            } else {
+                projectm_playlist_play_next(playlist, true)
+            }
         }
         reportCurrentPreset()
     }

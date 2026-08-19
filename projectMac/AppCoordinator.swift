@@ -29,9 +29,7 @@ final class AppCoordinator {
         }
     }
 
-    /// Applies the current (or default) `@AppStorage`-backed settings to the running
-    /// projectM instance. Called once presetManager is attached, and again whenever
-    /// `SettingsView` changes a value.
+    /// Called once `presetManager` is attached, and again whenever `SettingsView` changes a value.
     func applyPersistedSettings() {
         guard let presetManager else { return }
         let defaults = UserDefaults.standard

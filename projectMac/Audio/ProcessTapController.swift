@@ -148,7 +148,6 @@ final class ProcessTapController {
         }
     }
 
-    /// Returns the buffer shape captured by the first RT callback, if it's arrived yet.
     private func consumeDiagnosticsIfReady() -> (bufferCount: Int, channels: (Int, Int, Int, Int), byteSizes: (Int, Int, Int, Int))? {
         guard diagCaptured else { return nil }
         return (diagBufferCount, diagChannels, diagByteSizes)

@@ -12,9 +12,9 @@ enum AppSettingsKeys {
 
     nonisolated(unsafe) static let defaults: [String: Any] = [
         beatSensitivity: 1.0,
-        presetDuration: 16.0,
+        presetDuration: 15.0,
         meshSizeX: 96,
         meshSizeY: 72,
-        shufflePresets: true,
+        shufflePresets: false,
     ]
 }

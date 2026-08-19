@@ -111,7 +111,6 @@ final class ProjectMGLView: NSOpenGLView {
         ctx.unlock()
     }
 
-    /// Returns a new FPS sample about once per second, else nil.
     private func sampleFPS() -> Int? {
         frameCount += 1
         let now = CFAbsoluteTimeGetCurrent()

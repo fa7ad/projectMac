@@ -5,7 +5,7 @@ import os
 /// Shared app-level state that both the GL view and SwiftUI's `commands` menu need to
 /// reach: audio app discovery/tap selection, and (once the GL view creates it)
 /// preset navigation. Created once at app launch; the GL view attaches its
-/// `PresetManager` during `prepareOpenGL()`, since that needs a live GL context.
+/// `PresetManager` during `prepareOpenGL()`, once a live GL context exists.
 @Observable
 final class AppCoordinator {
     let audioAppMonitor = AudioAppMonitor()
@@ -19,7 +19,7 @@ final class AppCoordinator {
     private let logger = Logger(subsystem: "com.projectmac.app", category: "AppCoordinator")
 
     /// Wires up the preset-changed callback before `PresetManager.start()` loads the
-    /// first preset, so `renderStats` picks up that initial load too, not just later
+    /// first preset; `renderStats` picks up that initial load too, not just later
     /// next/prev/random calls.
     func attach(presetManager: PresetManager) {
         self.presetManager = presetManager

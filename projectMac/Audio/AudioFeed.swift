@@ -5,9 +5,8 @@ import Foundation
 ///
 /// Only `writeIndex` is written by the producer and only `readIndex` is written by the
 /// consumer; each side only reads the other's index. Aligned Int loads/stores are atomic
-/// on Apple ARM64/x86-64, so no lock is needed. Indices grow monotonically and are only
-/// reduced mod `capacity` at buffer access, avoiding the full/empty ambiguity of a plain
-/// wrapping index scheme.
+/// on Apple ARM64/x86-64. Indices grow monotonically and are only reduced mod `capacity`
+/// at buffer access.
 final class AudioFeed: @unchecked Sendable {
     private let capacity: Int
     private let buffer: UnsafeMutablePointer<Float>
@@ -19,7 +18,7 @@ final class AudioFeed: @unchecked Sendable {
     // Debug-only diagnostics for the on-screen overlay. `peakLevel` is written by the
     // producer (raised to the loudest sample seen) and reset by the consumer via
     // `consumePeakLevel()`; `overflowCount` is written only by the producer. Neither is
-    // locked — losing an update to a race is harmless for a diagnostic meter.
+    // locked.
     private nonisolated(unsafe) var peakLevel: Float = 0
     private nonisolated(unsafe) var overflowCount: Int = 0
 
@@ -39,7 +38,7 @@ final class AudioFeed: @unchecked Sendable {
 
     /// Called from the HAL I/O thread. `samples` is interleaved stereo float PCM;
     /// `sampleCount` is the total float count (frameCount * 2). Drops samples on overflow
-    /// rather than blocking, visual latency from a full buffer isn't worth an RT stall.
+    /// rather than blocking.
     func write(samples: UnsafePointer<Float>, sampleCount: Int) {
         let write = writeIndex
         let used = write - readIndex
@@ -78,7 +77,7 @@ final class AudioFeed: @unchecked Sendable {
 
     /// Stereo frames currently queued (written but not yet drained), and the buffer's
     /// total capacity in frames. Diagnostic only — read from either thread without
-    /// synchronization, same rationale as `peakLevel`.
+    /// synchronization.
     var backlogFrames: Int { (writeIndex - readIndex) / 2 }
     var capacityFrames: Int { capacity / 2 }
 

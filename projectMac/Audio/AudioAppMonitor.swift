@@ -3,8 +3,7 @@ import CoreAudio
 import Observation
 
 /// Enumerates running applications currently producing audio output, via the
-/// CoreAudio HAL process object list. Debounces HAL notifications since the list can
-/// fire several times in quick succession as processes start/stop audio IO.
+/// CoreAudio HAL process object list.
 @Observable
 final class AudioAppMonitor {
     private(set) var audioApps: [AudioApp] = []
@@ -18,17 +17,11 @@ final class AudioAppMonitor {
         mScope: kAudioObjectPropertyScopeGlobal,
         mElement: kAudioObjectPropertyElementMain
     )
-    /// Per-process listeners for `kAudioProcessPropertyIsRunningOutput`, since the list
-    /// listener above only fires when a process object is added/removed, not when an
-    /// already-registered process (e.g. an app that was already running) starts or stops
-    /// producing audio.
-    private var isRunningOutputAddress = AudioObjectPropertyAddress(
-        mSelector: kAudioProcessPropertyIsRunningOutput,
-        mScope: kAudioObjectPropertyScopeGlobal,
-        mElement: kAudioObjectPropertyElementMain
-    )
-    private var processListenerBlocks: [AudioObjectID: AudioObjectPropertyListenerBlock] = [:]
+    /// A single process starting/stopping audio can fire the list listener several times
+    /// in quick succession.
     private var debounceWorkItem: DispatchWorkItem?
+    /// The HAL never delivers change notifications for `kAudioProcessPropertyIsRunningOutput`.
+    private var pollTimer: Timer?
 
     func start() {
         guard listenerBlock == nil else { return }
@@ -39,6 +32,10 @@ final class AudioAppMonitor {
         }
         listenerBlock = block
         AudioObjectAddPropertyListenerBlock(.system, &address, .main, block)
+
+        pollTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            self?.refresh()
+        }
     }
 
     func stop() {
@@ -46,10 +43,8 @@ final class AudioAppMonitor {
             AudioObjectRemovePropertyListenerBlock(.system, &address, .main, block)
             listenerBlock = nil
         }
-        for (objectID, block) in processListenerBlocks {
-            AudioObjectRemovePropertyListenerBlock(objectID, &isRunningOutputAddress, .main, block)
-        }
-        processListenerBlocks.removeAll()
+        pollTimer?.invalidate()
+        pollTimer = nil
         debounceWorkItem?.cancel()
         debounceWorkItem = nil
     }
@@ -65,7 +60,6 @@ final class AudioAppMonitor {
 
     private func refresh() {
         guard let processIDs = try? AudioObjectID.readProcessObjectList() else { return }
-        updateProcessListeners(for: processIDs)
 
         let ownPID = ProcessInfo.processInfo.processIdentifier
         var apps: [AudioApp] = []
@@ -87,26 +81,9 @@ final class AudioAppMonitor {
             ))
         }
 
-        audioApps = apps.sorted { $0.name < $1.name }
+        let sorted = apps.sorted { $0.name < $1.name }
+        guard sorted != audioApps else { return }
+        audioApps = sorted
         onAppsChanged?(audioApps)
-    }
-
-    private func updateProcessListeners(for processIDs: [AudioObjectID]) {
-        let currentIDs = Set(processIDs)
-        let trackedIDs = Set(processListenerBlocks.keys)
-
-        for objectID in trackedIDs.subtracting(currentIDs) {
-            if let block = processListenerBlocks.removeValue(forKey: objectID) {
-                AudioObjectRemovePropertyListenerBlock(objectID, &isRunningOutputAddress, .main, block)
-            }
-        }
-
-        for objectID in currentIDs.subtracting(trackedIDs) {
-            let block: AudioObjectPropertyListenerBlock = { [weak self] _, _ in
-                self?.scheduleRefresh()
-            }
-            processListenerBlocks[objectID] = block
-            AudioObjectAddPropertyListenerBlock(objectID, &isRunningOutputAddress, .main, block)
-        }
     }
 }

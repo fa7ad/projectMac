@@ -3,9 +3,8 @@ import AppKit
 /// Owns the projectM playlist for one projectm_handle instance.
 ///
 /// Playlist calls (`projectm_playlist_play_next`, etc.) can trigger preset loading, which
-/// touches GL resources, so every call here is wrapped in the same GL context lock the
-/// render loop uses, to avoid racing with `projectm_opengl_render_frame` on the
-/// CVDisplayLink thread.
+/// touches GL resources. Every call here is wrapped in the same GL context lock that also
+/// guards `projectm_opengl_render_frame` on the CVDisplayLink thread.
 final class PresetManager {
     private let pm: projectm_handle
     private let glContext: NSOpenGLContext
@@ -35,10 +34,9 @@ final class PresetManager {
             projectm_playlist_add_path(playlist, texturesPath, true, false)
         }
 
-        // Without this, `onPresetChanged` would only ever fire from nextPreset()/
-        // prevPreset()/etc. below, missing projectM's own automatic switches (preset
-        // duration timeout, beat-driven hard cuts) — the displayed preset name would go
-        // stale the moment the engine advances on its own.
+        // Fires `onPresetChanged` for projectM's own automatic preset switches too (preset
+        // duration timeout, beat-driven hard cuts), not just calls made through
+        // nextPreset()/prevPreset()/etc. below.
         projectm_playlist_set_preset_switched_event_callback(playlist, Self.presetSwitchedCallback, Unmanaged.passUnretained(self).toOpaque())
 
         setShuffle(shuffle)
@@ -55,12 +53,12 @@ final class PresetManager {
     }
 
     /// Fires on *any* preset switch, not just ones made through this class. Automatic
-    /// switches happen inside `projectm_opengl_render_frame`, so this runs on the
+    /// switches happen inside `projectm_opengl_render_frame`, running this on the
     /// CVDisplayLink render thread in that case (vs. the main thread for
-    /// start()/nextPreset()/etc.) — safe without extra locking because both paths are
-    /// already serialized by the same GL context lock (`withLock` here, `ctx.lock()`
-    /// around the render call in `ProjectMGLView`). `reportCurrentPreset` hops to main
-    /// before touching `onPresetChanged`, since it drives `@Observable` state.
+    /// start()/nextPreset()/etc.). Both paths are already serialized by the same GL
+    /// context lock (`withLock` here, `ctx.lock()` around the render call in
+    /// `ProjectMGLView`). `reportCurrentPreset` hops to main before touching
+    /// `onPresetChanged`, which drives `@Observable` state.
     private static let presetSwitchedCallback: projectm_playlist_preset_switched_event = { _, _, userData in
         guard let userData else { return }
         Unmanaged<PresetManager>.fromOpaque(userData).takeUnretainedValue().reportCurrentPreset()

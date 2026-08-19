@@ -66,7 +66,7 @@ nonisolated struct TapResources {
         tapDescription = nil
     }
 
-    /// Clears instance state immediately so new resources can be created without waiting.
+    /// Clears instance state immediately; new resources can be created without waiting.
     mutating func destroyAsync(on queue: DispatchQueue = .global(qos: .utility), completion: (@Sendable () -> Void)? = nil) {
         let capturedTapID = tapID
         let capturedAggregateID = aggregateDeviceID

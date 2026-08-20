@@ -31,6 +31,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		2DA95975CE43223FEC0B5367 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
 		352B1F03A05CF0AD0825F07A /* projectMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = projectMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3AB3F22010C317AB17582469 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4BB0ED0F294D60A71CCA433D /* AudioAppMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAppMonitor.swift; sourceTree = "<group>"; };
@@ -119,6 +120,7 @@
 		A369414ECCEAC75B0061F52C = {
 			isa = PBXGroup;
 			children = (
+				E4BA27F06FFA7E05AA504064 /* Config */,
 				80989B30F70FF99C462CF683 /* projectMac */,
 				ACB5956E0F66E6CAD2A4AC67 /* Frameworks */,
 				F55ADC13C67AFAD02EBEC2D9 /* Products */,
@@ -147,6 +149,14 @@
 				6E5A55BF116FCEB40A59904A /* TapResources.swift */,
 			);
 			path = Audio;
+			sourceTree = "<group>";
+		};
+		E4BA27F06FFA7E05AA504064 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				2DA95975CE43223FEC0B5367 /* Signing.xcconfig */,
+			);
+			path = Config;
 			sourceTree = "<group>";
 		};
 		E92B0BE58AF2EB92211AC311 /* Rendering */ = {
@@ -209,7 +219,7 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					E144E1C111B1544085E79C4A = {
-						ProvisioningStyle = Automatic;
+						ProvisioningStyle = Manual;
 					};
 				};
 			};
@@ -297,6 +307,7 @@
 /* Begin XCBuildConfiguration section */
 		3238EDA3730C5467B34F94BE /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2DA95975CE43223FEC0B5367 /* Signing.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = projectMac/projectMac.entitlements;
@@ -317,6 +328,7 @@
 		};
 		63FB307E062FC18DE940D5EB /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2DA95975CE43223FEC0B5367 /* Signing.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = projectMac/projectMac.entitlements;
@@ -368,7 +380,6 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_APP_SANDBOX = NO;
@@ -395,7 +406,11 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_LDFLAGS = "-lprojectM-4 -lprojectM-4-playlist -lc++";
+				OTHER_LDFLAGS = (
+					"-lprojectM-4",
+					"-lprojectM-4-playlist",
+					"-lc++",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
@@ -438,7 +453,6 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_APP_SANDBOX = NO;
@@ -458,7 +472,11 @@
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
-				OTHER_LDFLAGS = "-lprojectM-4 -lprojectM-4-playlist -lc++";
+				OTHER_LDFLAGS = (
+					"-lprojectM-4",
+					"-lprojectM-4-playlist",
+					"-lc++",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;

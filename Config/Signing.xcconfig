@@ -1,0 +1,15 @@
+// Signing configuration.
+//
+// Defaults here are what CI uses: ad-hoc signing, which needs no development
+// team and no keychain, so the checked-in project builds anywhere. Entitlements
+// are still embedded, so the process tap keeps working on the machine that
+// built it.
+//
+// To sign with your own Apple Development identity, copy Local.xcconfig.example
+// to Local.xcconfig and fill in your team ID. That file is gitignored, so the
+// team never lands in the repo or in project.pbxproj.
+
+CODE_SIGN_STYLE = Manual
+CODE_SIGN_IDENTITY = -
+
+#include? "Local.xcconfig"

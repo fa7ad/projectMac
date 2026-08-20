@@ -21,16 +21,9 @@ jobs:
 
       - uses: ./.github/actions/setup-build
 
-      # Presets/textures are fetched fresh from upstream (see fetch-resources.sh) and are
-      # not needed to verify the app compiles and links, so empty placeholders stand in
-      # for them here instead of a full ~9,800-file fetch on every run.
+      # Empty placeholders are enough to compile, and make ensure_resources skip the fetch.
       - name: Create placeholder preset/texture directories
         run: mkdir -p projectMac/Resources/Presets projectMac/Resources/Textures
 
-      - name: Generate Xcode project
-        run: xcodegen generate
-
       - name: Build
-        run: |
-          xcodebuild -project projectMac.xcodeproj -scheme projectMac -configuration Debug build \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+        run: ./scripts/build.sh --unsigned

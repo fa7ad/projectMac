@@ -41,26 +41,29 @@ Menu equivalents exist for preset navigation (⌘→ / ⌘← / ⌘R) and audio 
 
 ## Building
 
-**Requirements:** macOS 15+, Xcode, [Homebrew](https://brew.sh). (Process taps need
-14.2; the 15 floor comes from the Swift `Synchronization` module the audio ring
-buffer uses.)
+**Requirements:** macOS 15+, Xcode, [Homebrew](https://brew.sh).
 
 ```bash
 # Build tools
-brew install cmake xcodegen
+brew install cmake xcodegen glm
 
 # libprojectM 4.x, built from source (see below)
-./build-libprojectm.sh
+./scripts/deps.sh
 
-# Presets + textures (fetched fresh, not vendored in this repo, see fetch-resources.sh)
-./fetch-resources.sh
+# Presets + textures (fetched fresh, not vendored in this repo)
+./scripts/fetch-resources.sh
 
 # Generate the Xcode project and build
-xcodegen generate
+./scripts/build.sh
 open projectMac.xcodeproj
 ```
 
-Or from the command line: `./build.sh` (Debug by default; pass `Release` for a release build).
+`./scripts/build.sh` takes `Debug` (default) or `Release`, plus `--unsigned` to skip
+code signing and `--with-deps` to run the two setup steps above first. `--help` lists
+everything.
+
+All build scripts live in `scripts/`, sharing `scripts/lib.sh`, and can be run from any
+directory.
 
 `project.yml` is the source of truth for the Xcode project, re-run `xcodegen generate`
 after editing it rather than hand-editing `projectMac.xcodeproj`.
@@ -69,32 +72,34 @@ after editing it rather than hand-editing `projectMac.xcodeproj`.
 
 The app links against libprojectM 4.x, which it calls through the library's C API.
 Homebrew's `projectm` package is 3.1.x and exposes a C++ API instead, so the 4.x build
-comes from source.
+comes from source. `./scripts/deps.sh` builds and installs it into `/usr/local`.
 
-`./build-libprojectm.sh` performs that build:
-
-- clones `projectM-visualizer/projectm` into `vendor/projectm`, or fast-forwards it if
-  the clone already exists, then initializes its submodules
-- configures a Release build in `vendor/projectm/build` as a static library with the
-  playlist library enabled, tests and the SDL UI disabled, and a 15.0 deployment target
-- builds and installs into `/usr/local`, using `sudo` for the install step only when the
-  prefix is not writable
-
-Set `PREFIX` to install elsewhere: `PREFIX="$HOME/.local" ./build-libprojectm.sh`.
+Set `PREFIX` to install elsewhere: `PREFIX="$HOME/.local" ./scripts/deps.sh`
+(`project.yml`'s search paths point at `/usr/local`, so a different prefix means
+updating those too).
 `vendor/` is gitignored, so the checkout and build tree stay out of this repository.
 
-### Packaging a DMG
+### Packaging
 
-`./package.sh [version]` builds a Release configuration and packages it into
-`dist/projectMac-<version>.dmg` (version defaults to `git describe` if omitted). Pushing
-a `v*` tag (e.g. `v0.2.0`) also runs this via the [Release workflow](.github/workflows/release.yml),
-attaching the resulting DMG to a GitHub Release.
+`./scripts/package.sh [version]` builds a Release configuration and packages it into
+`dist/projectMac-<version>.dmg` (version defaults to `git describe` if omitted).
+
+Pass `--no-dmg` to get `dist/projectMac-<version>.app` instead. It keeps its code
+signature, so it runs straight from `dist/`.
+
+Pushing a `v*` tag (e.g. `v0.2.0`) also runs this via the
+[Release workflow](.github/workflows/release.yml), attaching the resulting DMG to a
+GitHub Release.
 
 ### Signing & entitlements
 
 Process taps require App Sandbox off and the `com.apple.security.device.audio-input`
-entitlement; both are already configured in `project.yml`. Pick a signing team in
-Xcode's project settings before running on your own machine.
+entitlement; both are already configured in `project.yml`.
+
+Builds are ad-hoc signed by default, which needs no developer account. To sign with your
+own Apple Development identity, copy `Config/Local.xcconfig.example` to
+`Config/Local.xcconfig` and set `DEVELOPMENT_TEAM` to your team ID. That file is
+gitignored, so your team ID stays off the repo.
 
 ## Architecture
 

@@ -10,11 +10,13 @@ settings:
     SWIFT_VERSION: "6.0"
     HEADER_SEARCH_PATHS: /usr/local/include
     LIBRARY_SEARCH_PATHS: /usr/local/lib
-    OTHER_LDFLAGS: -lprojectM-4 -lprojectM-4-playlist -lc++
+    OTHER_LDFLAGS:
+      - -lprojectM-4
+      - -lprojectM-4-playlist
+      - -lc++
     SWIFT_OBJC_BRIDGING_HEADER: projectMac/Bridge/projectm-bridge.h
     ENABLE_APP_SANDBOX: NO
     ENABLE_HARDENED_RUNTIME: YES
-    CODE_SIGN_STYLE: Automatic
 
 targets:
   projectMac:
@@ -58,6 +60,9 @@ targets:
         MARKETING_VERSION: "0.2.0"
         CURRENT_PROJECT_VERSION: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    configFiles:
+      Debug: Config/Signing.xcconfig
+      Release: Config/Signing.xcconfig
     dependencies:
       - sdk: OpenGL.framework
       - sdk: CoreAudio.framework

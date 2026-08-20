@@ -9,3 +9,4 @@ DerivedData/
 *.xcuserstate
 xcuserdata/
 *.swp
+Config/Local.xcconfig

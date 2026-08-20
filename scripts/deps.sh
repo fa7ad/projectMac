@@ -1,41 +1,41 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# shellcheck source=scripts/lib.sh
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+cd "$REPO_ROOT"
 
-# Clones libprojectM 4.x into vendor/projectm and installs it into $PREFIX.
-# Homebrew's `projectm` cask is 3.1.x with an old C++ API; this project needs
-# 4.x's C API, so it has to come from source.
-#
-# Also used by CI (.github/actions/setup-build), so this is the only place the
-# cmake invocation lives.
+# Builds libprojectM 4.x from source into $PREFIX. Also run by CI
+# (.github/actions/setup-build), so keep the cmake invocation here only.
 
 REPO="https://github.com/projectM-visualizer/projectm.git"
-SRC_DIR="vendor/projectm"
+SRC_DIR="$REPO_ROOT/vendor/projectm"
 BUILD_DIR="$SRC_DIR/build"
-PREFIX="${PREFIX:-/usr/local}"
-DEPLOYMENT_TARGET="${DEPLOYMENT_TARGET:-15.0}"
 
-for tool in git cmake; do
-  command -v "$tool" >/dev/null || { echo "$tool not found (brew install cmake)" >&2; exit 1; }
-done
+require_tools git cmake
 
 if [ -d "$SRC_DIR/.git" ]; then
+  log "Updating $SRC_DIR"
   git -C "$SRC_DIR" pull --ff-only
 else
+  log "Cloning libprojectM into $SRC_DIR"
   mkdir -p "$(dirname "$SRC_DIR")"
   git clone "$REPO" "$SRC_DIR"
 fi
 git -C "$SRC_DIR" submodule update --init
 
+log "Configuring libprojectM (prefix $PREFIX, deployment target $DEPLOYMENT_TARGET)"
 cmake -S "$SRC_DIR" -B "$BUILD_DIR" \
   -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PREFIX" \
   -DBUILD_SHARED_LIBS=OFF -DENABLE_PLAYLIST=ON -DENABLE_TESTING=OFF -DENABLE_SDL_UI=OFF \
+  -DENABLE_SYSTEM_GLM=ON \
   -DCMAKE_OSX_DEPLOYMENT_TARGET="$DEPLOYMENT_TARGET"
 cmake --build "$BUILD_DIR" --parallel
 
 if [ -w "$PREFIX" ]; then
   cmake --install "$BUILD_DIR"
 else
+  log "$PREFIX is not writable, installing with sudo"
   sudo cmake --install "$BUILD_DIR"
 fi
 
-echo "Installed libprojectM into $PREFIX"
+log "Installed libprojectM into $PREFIX"

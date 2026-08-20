@@ -1,6 +1,6 @@
 name: Setup build
 description: >
-  Installs cmake/xcodegen and builds libprojectM 4.x from source into /usr/local,
+  Installs cmake/xcodegen/glm and builds libprojectM 4.x from source into /usr/local,
   cached by the upstream repo's current commit SHA.
 
 runs:
@@ -10,7 +10,7 @@ runs:
       shell: bash
       run: |
         export HOMEBREW_NO_AUTO_UPDATE=1
-        brew install cmake xcodegen
+        brew install cmake xcodegen glm
 
     - name: Resolve libprojectM commit
       id: projectm-rev
@@ -31,4 +31,4 @@ runs:
     - name: Build libprojectM 4.x from source
       if: steps.cache-libprojectm.outputs.cache-hit != 'true'
       shell: bash
-      run: ./build-libprojectm.sh
+      run: ./scripts/deps.sh

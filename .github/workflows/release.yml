@@ -23,7 +23,7 @@ jobs:
       - uses: ./.github/actions/setup-build
 
       - name: Package DMG
-        run: ./package.sh "${{ github.ref_name }}"
+        run: ./scripts/package.sh "${{ github.ref_name }}"
 
       - name: Create release
         uses: softprops/action-gh-release@v3

@@ -12,51 +12,55 @@ for general use.
 
 ## Commands
 
+All build scripts live in `scripts/` and source `scripts/lib.sh`. Put anything more
+than one script needs in `lib.sh` rather than duplicating it. Every script works from
+any working directory.
+
 Build (regenerates the Xcode project via XcodeGen, then builds):
 ```bash
-./build.sh              # Debug
-./build.sh Release       # Release
-```
-
-Or manually:
-```bash
-xcodegen generate
-xcodebuild -project projectMac.xcodeproj -scheme projectMac -configuration Debug build
+./scripts/build.sh              # Debug
+./scripts/build.sh Release      # Release
+./scripts/build.sh --unsigned   # skip code signing (what CI uses)
+./scripts/build.sh --with-deps  # build libprojectM + fetch resources first
+./scripts/build.sh --help
 ```
 
 `project.yml` is the source of truth for the Xcode project. Never hand-edit
-`projectMac.xcodeproj`, edit `project.yml` and re-run `xcodegen generate` (or `build.sh`,
-which does this automatically).
+`projectMac.xcodeproj`, edit `project.yml` and re-run `xcodegen generate` (or
+`scripts/build.sh`, which does this automatically).
 
 Fetch preset/texture assets (not vendored, gitignored, run once before first build or
 whenever presets need refreshing):
 ```bash
-./fetch-resources.sh
+./scripts/fetch-resources.sh
 ```
+`scripts/build.sh` and `scripts/package.sh` call this automatically when the directories
+are missing (`ensure_resources` in `scripts/lib.sh`). The guard tests directory
+*existence*, not contents — CI relies on that to skip the fetch with empty placeholders.
 
-Package a Release build into a DMG (also fetches resources first if missing):
+Package a Release build into `dist/`:
 ```bash
-./package.sh [version]     # defaults to `git describe` if version is omitted
+./scripts/package.sh [version]            # DMG (version defaults to `git describe`)
+./scripts/package.sh [version] --no-dmg   # projectMac-<version>.app instead
 ```
-Pushing a `v*` tag runs the same script in CI (`.github/workflows/release.yml`) and
-attaches the resulting DMG to a GitHub Release. `.github/workflows/build.yml` runs on
-every push/PR to `main` as a compile-only check (code signing disabled, empty
-placeholder preset/texture directories instead of a full fetch). Both workflows share
-libprojectM's from-source build/cache step via the `.github/actions/setup-build`
-composite action.
+Pushing a `v*` tag runs `scripts/package.sh` in CI
+(`.github/workflows/release.yml`) and attaches the DMG to a GitHub Release.
+`.github/workflows/build.yml` runs on every push/PR to `main` as a compile-only check
+(`scripts/build.sh --unsigned`). Both workflows share libprojectM's build/cache step via
+the `.github/actions/setup-build` composite action.
 
 There is no automated test suite in this project (no test target in `project.yml`).
-Verification is interactive: build, run via `open projectMac.xcodeproj` or `xcodebuild`
-+ launch, and exercise the feature by hand (audio tap selection, preset navigation,
-settings, fullscreen).
+Verification is interactive: build, run via `open projectMac.xcodeproj` or
+`scripts/build.sh` + launch, and exercise the feature by hand (audio tap selection,
+preset navigation, settings, fullscreen).
 
 libprojectM itself must be built from source into `/usr/local` before the app can link
 (Homebrew's `projectm` cask is 3.1.x with an old C++ API; this project needs 4.x's C
-API). `./build-libprojectm.sh` does this: clones/updates `vendor/projectm`, builds it
+API). `./scripts/deps.sh` does this: clones/updates `vendor/projectm`, builds it
 static with the playlist library, and installs it (set `PREFIX` to install elsewhere,
-`DEPLOYMENT_TARGET` to change the minimum OS). The CI composite action
-`.github/actions/setup-build` runs the same script, so the cmake invocation lives in one
-place only.
+`DEPLOYMENT_TARGET` to change the minimum OS). Needs `brew install glm`. The CI
+composite action `.github/actions/setup-build` runs the same script, so the cmake
+invocation lives in one place only.
 
 ## Architecture
 
@@ -149,5 +153,11 @@ must only happen on the main thread.
 
 Process taps require App Sandbox off and the
 `com.apple.security.device.audio-input` entitlement; both already configured in
-`project.yml`/`projectMac.entitlements`. A signing team still needs to be picked in
-Xcode before running on a new machine.
+`project.yml`/`projectMac.entitlements`.
+
+`Config/Signing.xcconfig` defaults to ad-hoc signing and optionally includes
+`Config/Local.xcconfig` (gitignored, copied from `.example`) for a real team ID.
+
+Keep signing settings out of `project.yml` — they get baked into the committed
+`project.pbxproj`, and a project-level build setting there outranks the target's
+xcconfig, so it would override `Local.xcconfig` instead of being overridden by it.

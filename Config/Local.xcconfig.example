@@ -1,0 +1,4 @@
+// Copy to Local.xcconfig (gitignored) and set your own team ID.
+CODE_SIGN_STYLE = Automatic
+CODE_SIGN_IDENTITY[sdk=macosx*] = Apple Development
+DEVELOPMENT_TEAM = XXXXXXXXXX

@@ -13,6 +13,14 @@ Components:
 - **libprojectM 4.x**, built from source and called from Swift through a C bridging header
 - **CoreAudio process taps** (`AudioHardwareCreateProcessTap`, introduced in macOS 14.2) for per-app audio capture
 
+## Screenshots
+
+![Windowed, with the debug overlay showing FPS, preset name, and the tapped app](docs/screenshots/visualizer.jpg)
+
+![A different preset](docs/screenshots/preset.jpg)
+
+![Fullscreen with the Settings window open](docs/screenshots/settings.jpg)
+
 ## Features
 
 - Audio source is chosen from the **Audio** menu, listing apps that are currently producing

@@ -54,13 +54,19 @@ Verification is interactive: build, run via `open projectMac.xcodeproj` or
 `scripts/build.sh` + launch, and exercise the feature by hand (audio tap selection,
 preset navigation, settings, fullscreen).
 
-libprojectM itself must be built from source into `/usr/local` before the app can link
-(Homebrew's `projectm` cask is 3.1.x with an old C++ API; this project needs 4.x's C
-API). `./scripts/deps.sh` does this: clones/updates `vendor/projectm`, builds it
-static with the playlist library, and installs it (set `PREFIX` to install elsewhere,
-`DEPLOYMENT_TARGET` to change the minimum OS). Needs `brew install glm`. The CI
-composite action `.github/actions/setup-build` runs the same script, so the cmake
-invocation lives in one place only.
+libprojectM itself must be built from source into `$PREFIX` (default `/usr/local`)
+before the app can link (Homebrew's `projectm` cask is 3.1.x with an old C++ API; this
+project needs 4.x's C API). `./scripts/deps.sh` does this: clones/updates
+`vendor/projectm`, builds it static with the playlist library, and installs it (set
+`PREFIX` to install elsewhere, `DEPLOYMENT_TARGET` to change the minimum OS). Needs
+`brew install glm`. The CI composite action `.github/actions/setup-build` runs the same
+script, so the cmake invocation lives in one place only.
+
+`project.yml` writes its search paths as `$(PROJECTM_PREFIX)/{include,lib}` and
+`xcode_build` passes `PROJECTM_PREFIX=$PREFIX` on the xcodebuild command line, so
+`PREFIX` is the only knob. CI must keep it off `/usr/local`: `actions/cache` restores
+without sudo, so caching a `/usr/local` prefix fails extraction on every run
+(`Cannot mkdir: Permission denied`) and rebuilds the library each time.
 
 ## Architecture
 

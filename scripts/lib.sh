@@ -13,7 +13,8 @@ TEXTURES_DIR="$RESOURCES_DIR/Textures"
 # shellcheck disable=SC2034  # used by package.sh
 DIST_DIR="$REPO_ROOT/dist"
 
-# Overriding PREFIX also means repointing project.yml's absolute search paths.
+# xcode_build passes this through as PROJECTM_PREFIX, which project.yml's search
+# paths are written in terms of.
 PREFIX="${PREFIX:-/usr/local}"
 DEPLOYMENT_TARGET="${DEPLOYMENT_TARGET:-15.0}"
 
@@ -68,7 +69,7 @@ xcode_build() {
 
   local args=(-project "$PROJECT" -scheme "$SCHEME" -configuration "$configuration")
   [ -n "$derived_data" ] && args+=(-derivedDataPath "$derived_data")
-  args+=(build)
+  args+=(build "PROJECTM_PREFIX=$PREFIX")
   [ "$unsigned" -eq 1 ] && args+=(CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO)
   [ ${#extra[@]} -gt 0 ] && args+=("${extra[@]}")
 

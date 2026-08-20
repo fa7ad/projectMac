@@ -8,8 +8,9 @@ options:
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    HEADER_SEARCH_PATHS: /usr/local/include
-    LIBRARY_SEARCH_PATHS: /usr/local/lib
+    PROJECTM_PREFIX: /usr/local
+    HEADER_SEARCH_PATHS: $(PROJECTM_PREFIX)/include
+    LIBRARY_SEARCH_PATHS: $(PROJECTM_PREFIX)/lib
     OTHER_LDFLAGS:
       - -lprojectM-4
       - -lprojectM-4-playlist

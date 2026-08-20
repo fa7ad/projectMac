@@ -82,9 +82,9 @@ The app links against libprojectM 4.x, which it calls through the library's C AP
 Homebrew's `projectm` package is 3.1.x and exposes a C++ API instead, so the 4.x build
 comes from source. `./scripts/deps.sh` builds and installs it into `/usr/local`.
 
-Set `PREFIX` to install elsewhere: `PREFIX="$HOME/.local" ./scripts/deps.sh`
-(`project.yml`'s search paths point at `/usr/local`, so a different prefix means
-updating those too).
+Set `PREFIX` to install elsewhere: `PREFIX="$HOME/.local" ./scripts/deps.sh`. Pass the
+same `PREFIX` to `scripts/build.sh`/`scripts/package.sh`, which forward it to
+`xcodebuild` as `PROJECTM_PREFIX`.
 `vendor/` is gitignored, so the checkout and build tree stay out of this repository.
 
 ### Packaging

@@ -31,6 +31,7 @@ cmake -S "$SRC_DIR" -B "$BUILD_DIR" \
   -DCMAKE_OSX_DEPLOYMENT_TARGET="$DEPLOYMENT_TARGET"
 cmake --build "$BUILD_DIR" --parallel
 
+mkdir -p "$PREFIX" 2>/dev/null || true
 if [ -w "$PREFIX" ]; then
   cmake --install "$BUILD_DIR"
 else

@@ -52,7 +52,11 @@ settings, fullscreen).
 
 libprojectM itself must be built from source into `/usr/local` before the app can link
 (Homebrew's `projectm` cask is 3.1.x with an old C++ API; this project needs 4.x's C
-API). See the README's Building section for the full cmake invocation.
+API). `./build-libprojectm.sh` does this: clones/updates `vendor/projectm`, builds it
+static with the playlist library, and installs it (set `PREFIX` to install elsewhere,
+`DEPLOYMENT_TARGET` to change the minimum OS). The CI composite action
+`.github/actions/setup-build` runs the same script, so the cmake invocation lives in one
+place only.
 
 ## Architecture
 

@@ -2,24 +2,27 @@
 
 [![Build](https://github.com/fa7ad/projectMac/actions/workflows/build.yml/badge.svg)](https://github.com/fa7ad/projectMac/actions/workflows/build.yml)
 
-> **Personal build.** This is a personal project built for my own use. It is not intended to be useful for anyone other than me.
+> **Personal build.** Written for my own use, not maintained for general use.
 
-A native macOS music visualizer. Pick any running app's audio output and watch it drive a
-full [projectM](https://github.com/projectM-visualizer/projectm) (MilkDrop-style)
-visualization, rendered in a native SwiftUI app.
+A macOS music visualizer. It captures the audio output of a selected running app and
+renders a MilkDrop-style visualization from it using
+[projectM](https://github.com/projectM-visualizer/projectm).
 
-Built with:
+Components:
 - **SwiftUI** for the app shell, menus, and Settings window
-- **libprojectM 4.x** (built from source) for rendering, called directly from Swift via a C bridging header
-- **CoreAudio process taps** (`AudioHardwareCreateProcessTap`, macOS 14.2+) for per-app audio capture
+- **libprojectM 4.x**, built from source and called from Swift through a C bridging header
+- **CoreAudio process taps** (`AudioHardwareCreateProcessTap`, introduced in macOS 14.2) for per-app audio capture
 
 ## Features
 
-- Pick any audio-producing app from the **Audio** menu (or let it auto-select the first one it finds); switches live, no restart
-- Cycle, randomize, or shuffle through ~9,800 community presets from [presets-cream-of-the-crop](https://github.com/projectM-visualizer/presets-cream-of-the-crop)
+- Audio source is chosen from the **Audio** menu, listing apps that are currently producing
+  audio; the first one found is selected at launch. Changing it takes effect without a restart.
+- Preset navigation: next, previous, random, and shuffle over the ~9,800 presets in
+  [presets-cream-of-the-crop](https://github.com/projectM-visualizer/presets-cream-of-the-crop)
 - On-screen debug overlay (`D`): FPS, current preset name, tapped app
-- Fullscreen (`F`), with the visualization resizing cleanly
-- Settings window (⌘,): beat sensitivity, preset duration, mesh quality, shuffle, all applied live, no restart
+- Fullscreen (`F`); the visualization resizes with the window
+- Settings window (⌘,): beat sensitivity, preset duration, mesh quality, and shuffle,
+  each applied without a restart
 
 ## Keyboard shortcuts
 
@@ -44,18 +47,8 @@ Menu equivalents exist for preset navigation (⌘→ / ⌘← / ⌘R) and audio 
 # Build tools
 brew install cmake xcodegen
 
-# libprojectM 4.x from source: Homebrew's `projectm` cask is 3.1.x with an old C++ API;
-# this project needs 4.x's C API, which Swift can call directly.
-mkdir -p vendor && cd vendor
-git clone https://github.com/projectM-visualizer/projectm.git
-cd projectm && git submodule update --init
-mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
-  -DBUILD_SHARED_LIBS=OFF -DENABLE_PLAYLIST=ON -DENABLE_TESTING=OFF -DENABLE_SDL_UI=OFF \
-  -DCMAKE_OSX_DEPLOYMENT_TARGET=14.2
-cmake --build . --parallel
-sudo cmake --install .
-cd ../../..
+# libprojectM 4.x, built from source (see below)
+./build-libprojectm.sh
 
 # Presets + textures (fetched fresh, not vendored in this repo, see fetch-resources.sh)
 ./fetch-resources.sh
@@ -70,12 +63,30 @@ Or from the command line: `./build.sh` (Debug by default; pass `Release` for a r
 `project.yml` is the source of truth for the Xcode project, re-run `xcodegen generate`
 after editing it rather than hand-editing `projectMac.xcodeproj`.
 
+### libprojectM
+
+The app links against libprojectM 4.x, which it calls through the library's C API.
+Homebrew's `projectm` package is 3.1.x and exposes a C++ API instead, so the 4.x build
+comes from source.
+
+`./build-libprojectm.sh` performs that build:
+
+- clones `projectM-visualizer/projectm` into `vendor/projectm`, or fast-forwards it if
+  the clone already exists, then initializes its submodules
+- configures a Release build in `vendor/projectm/build` as a static library with the
+  playlist library enabled, tests and the SDL UI disabled, and a 14.2 deployment target
+- builds and installs into `/usr/local`, using `sudo` for the install step only when the
+  prefix is not writable
+
+Set `PREFIX` to install elsewhere: `PREFIX="$HOME/.local" ./build-libprojectm.sh`.
+`vendor/` is gitignored, so the checkout and build tree stay out of this repository.
+
 ### Packaging a DMG
 
 `./package.sh [version]` builds a Release configuration and packages it into
 `dist/projectMac-<version>.dmg` (version defaults to `git describe` if omitted). Pushing
 a `v*` tag (e.g. `v0.2.0`) also runs this via the [Release workflow](.github/workflows/release.yml),
-attaching the resulting DMG to a GitHub Release automatically.
+attaching the resulting DMG to a GitHub Release.
 
 ### Signing & entitlements
 
@@ -87,11 +98,12 @@ Xcode's project settings before running on your own machine.
 
 Audio flows: CoreAudio HAL I/O thread (process tap) to lock-free ring buffer to CVDisplayLink
 render thread to `projectm_pcm_add_float`. The render loop and any preset/settings changes
-share a GL context lock to stay off each other's toes.
+share a GL context lock, so they do not run concurrently.
 
 ## Acknowledgments
 
-- [**projectM**](https://github.com/projectM-visualizer/projectm), the visualization engine this app is a thin native wrapper around, along with its
+- [**projectM**](https://github.com/projectM-visualizer/projectm), the visualization engine
+  this app wraps, along with its
   [presets-cream-of-the-crop](https://github.com/projectM-visualizer/presets-cream-of-the-crop) and
   [presets-milkdrop-texture-pack](https://github.com/projectM-visualizer/presets-milkdrop-texture-pack) asset packs.
 - **[frontend-sdl-rust](https://github.com/projectM-visualizer/frontend-sdl-rust)** (projectM's Rust/SDL reference frontend, LGPL-licensed), used as a
@@ -106,6 +118,5 @@ share a GL context lock to stay off each other's toes.
 This project's own code is [MIT](LICENSE).
 
 **Third-party: libprojectM** is [LGPL-2.1-or-later](https://github.com/projectM-visualizer/projectm/blob/master/LICENSE.txt),
-copyright the projectM Team. It is not vendored in this repository, the build
-steps above have you clone and build it fresh from its own upstream source,
-unmodified, and link it in statically.
+copyright the projectM Team. It is not vendored in this repository; the build steps above
+clone and build it from its own upstream source, unmodified, and link it statically.

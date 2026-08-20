@@ -31,13 +31,4 @@ runs:
     - name: Build libprojectM 4.x from source
       if: steps.cache-libprojectm.outputs.cache-hit != 'true'
       shell: bash
-      run: |
-        mkdir -p vendor && cd vendor
-        git clone https://github.com/projectM-visualizer/projectm.git
-        cd projectm && git submodule update --init
-        mkdir build && cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
-          -DBUILD_SHARED_LIBS=OFF -DENABLE_PLAYLIST=ON -DENABLE_TESTING=OFF -DENABLE_SDL_UI=OFF \
-          -DCMAKE_OSX_DEPLOYMENT_TARGET=14.2
-        cmake --build . --parallel
-        sudo cmake --install .
+      run: ./build-libprojectm.sh

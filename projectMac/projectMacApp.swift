@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 @main
@@ -6,10 +7,13 @@ struct projectMacApp: App {
 
     init() {
         UserDefaults.standard.register(defaults: AppSettingsKeys.defaults)
+        // A second window would attach a second PresetManager to the one coordinator and
+        // race the first's GL context. Single `Window` scene above, no tabs here.
+        NSWindow.allowsAutomaticWindowTabbing = false
     }
 
     var body: some Scene {
-        WindowGroup {
+        Window("projectMac", id: "visualizer") {
             ZStack(alignment: .topLeading) {
                 ProjectMViewRepresentable(coordinator: coordinator)
                     .ignoresSafeArea()

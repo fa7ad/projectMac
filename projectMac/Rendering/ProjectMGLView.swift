@@ -4,25 +4,21 @@ import os
 
 final class ProjectMGLView: NSOpenGLView {
 
-    // Accessed from both the main thread and the CVDisplayLink callback thread;
-    // safety is by construction (display link lifecycle), not actor isolation.
-    private nonisolated(unsafe) var displayLink: CVDisplayLink?
-    private nonisolated(unsafe) var pm: projectm_handle?
+    // Touched from both the main and CVDisplayLink threads; safe by construction (the
+    // display link's lifecycle), not by isolation.
+    private var displayLink: CVDisplayLink?
+    private var pm: projectm_handle?
 
-    /// Set immediately after creation by `ProjectMViewRepresentable.makeNSView`, before
-    /// this view is attached to a window, always non-nil by the time `prepareOpenGL()`
-    /// or `keyDown(_:)` can fire.
-    nonisolated(unsafe) var coordinator: AppCoordinator!
+    /// Set by `ProjectMViewRepresentable.makeNSView` before the view reaches a window, so
+    /// non-nil by the time anything here can fire.
+    var coordinator: AppCoordinator!
 
     private let logger = Logger(subsystem: "com.projectmac.app", category: "ProjectMGLView")
 
-    // FPS counting, only ever touched from the CVDisplayLink thread.
-    private nonisolated(unsafe) var frameCount = 0
-    private nonisolated(unsafe) var lastFPSSampleTime = CFAbsoluteTimeGetCurrent()
-
-    // Audio peak accumulated between FPS samples, only ever touched from the
-    // CVDisplayLink thread.
-    private nonisolated(unsafe) var peakSinceLastSample: Float = 0
+    // CVDisplayLink thread only: FPS counting, and the audio peak between FPS samples.
+    private var frameCount = 0
+    private var lastFPSSampleTime = CFAbsoluteTimeGetCurrent()
+    private var peakSinceLastSample: Float = 0
 
     static func makePixelFormat() -> NSOpenGLPixelFormat {
         let attrs: [NSOpenGLPixelFormatAttribute] = [
@@ -44,9 +40,8 @@ final class ProjectMGLView: NSOpenGLView {
         pm = projectm_create()
         updateWindowSize()
         if let pm, let ctx = openGLContext {
-            // Informational only: fed to presets for their own calculations, doesn't
-            // throttle or otherwise affect this render loop's actual cadence, which
-            // CVDisplayLink drives at the display's native rate.
+            // Informational only, for presets' own calculations; CVDisplayLink drives the
+            // real cadence at the display's native rate.
             projectm_set_fps(pm, 60)
             logger.debug("projectm_pcm_get_max_samples() = \(projectm_pcm_get_max_samples())")
             let manager = PresetManager(pm: pm, glContext: ctx)
@@ -160,7 +155,10 @@ final class ProjectMGLView: NSOpenGLView {
         }
     }
 
-    deinit {
+    /// `isolated` so teardown can touch main-actor state without an `unsafe` opt-out. A
+    /// release off the main thread hops here first; the view outlives the body either way,
+    /// so the display link always stops before dealloc.
+    isolated deinit {
         if let dl = displayLink { CVDisplayLinkStop(dl) }
         coordinator.stop()
         if let pm { projectm_destroy(pm) }

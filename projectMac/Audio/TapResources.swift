@@ -1,21 +1,15 @@
 // SPDX-License-Identifier: MIT
-// Teardown ordering is dictated by CoreAudio's HAL requirements (stop -> destroy IOProc
-// -> destroy aggregate -> destroy tap), documented in Apple's process-tap API; this
-// implementation was informed by patterns common to public reference implementations
-// of that API, including pantafive/fader (MIT).
+// Written from Apple's public process-tap API, informed by patterns common to public
+// reference implementations including pantafive/fader (MIT).
 
 import AudioToolbox
 import os
 
-/// Encapsulates Core Audio tap and aggregate device resources.
+/// Core Audio tap and aggregate device resources.
 ///
-/// **Teardown order is critical:**
-/// 1. Stop device proc (AudioDeviceStop)
-/// 2. Destroy IO proc ID (AudioDeviceDestroyIOProcID), blocks until callback finishes
-/// 3. Destroy aggregate device (AudioHardwareDestroyAggregateDevice)
-/// 4. Destroy process tap (AudioHardwareDestroyProcessTap)
-///
-/// Violating this order can leak HAL resources or crash on shutdown.
+/// Teardown order is dictated by the HAL and must not change: `AudioDeviceStop`, destroy
+/// the IOProc ID (blocks until the callback finishes), destroy the aggregate device, then
+/// destroy the tap. Out of order leaks HAL resources or crashes on shutdown.
 nonisolated struct TapResources {
     private static let logger = Logger(subsystem: "com.projectmac.app", category: "TapResources")
 

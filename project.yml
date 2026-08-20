@@ -2,7 +2,7 @@ name: projectMac
 options:
   bundleIdPrefix: com.projectmac
   deploymentTarget:
-    macOS: "14.2"
+    macOS: "15.0"
   createIntermediateGroups: true
 
 settings:
@@ -20,7 +20,7 @@ targets:
   projectMac:
     type: application
     platform: macOS
-    deploymentTarget: "14.2"
+    deploymentTarget: "15.0"
     sources:
       - path: projectMac
         excludes:
@@ -55,7 +55,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.projectmac.app
         PRODUCT_NAME: projectMac
-        MARKETING_VERSION: "0.1.2"
+        MARKETING_VERSION: "0.2.0"
         CURRENT_PROJECT_VERSION: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     dependencies:

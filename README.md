@@ -41,7 +41,9 @@ Menu equivalents exist for preset navigation (⌘→ / ⌘← / ⌘R) and audio 
 
 ## Building
 
-**Requirements:** macOS 14.2+, Xcode, [Homebrew](https://brew.sh).
+**Requirements:** macOS 15+, Xcode, [Homebrew](https://brew.sh). (Process taps need
+14.2; the 15 floor comes from the Swift `Synchronization` module the audio ring
+buffer uses.)
 
 ```bash
 # Build tools
@@ -74,7 +76,7 @@ comes from source.
 - clones `projectM-visualizer/projectm` into `vendor/projectm`, or fast-forwards it if
   the clone already exists, then initializes its submodules
 - configures a Release build in `vendor/projectm/build` as a static library with the
-  playlist library enabled, tests and the SDL UI disabled, and a 14.2 deployment target
+  playlist library enabled, tests and the SDL UI disabled, and a 15.0 deployment target
 - builds and installs into `/usr/local`, using `sudo` for the install step only when the
   prefix is not writable
 

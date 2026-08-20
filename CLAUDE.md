@@ -102,6 +102,9 @@ must only happen on the main thread.
   callback *before* `PresetManager.start()` loads the first preset (so the initial load
   is observed, not just later next/prev calls), and `applyPersistedSettings()` runs
   *after* `start()` (so the playlist already exists when settings like shuffle apply).
+  Because one coordinator holds exactly one `PresetManager`, the app is a single-window
+  app: `projectMacApp` uses a `Window` scene (not `WindowGroup`) and disables window
+  tabbing, so no second `ProjectMGLView` can attach over the first one's GL context.
 
 - **`ProjectMGLView`** (`Rendering/ProjectMGLView.swift`): an `NSOpenGLView` subclass
   owning the `projectm_handle`, the `CVDisplayLink`, and keyboard shortcut handling
@@ -128,7 +131,10 @@ must only happen on the main thread.
 
 - **`AudioFeed`** (`Audio/AudioFeed.swift`): the lock-free SPSC ring buffer bridging
   the HAL I/O thread to the render thread. Drops samples on overflow rather than
-  blocking, since visual latency from a full buffer isn't worth a real-time stall.
+  blocking, since visual latency from a full buffer isn't worth a real-time stall. Its
+  read/write indices are `Synchronization.Atomic` with release/acquire ordering, so the
+  sample stores an index publishes are visible before the index itself is — this is why
+  the deployment target is 15.0 rather than the 14.2 that process taps alone would need.
 
 - **`AppSettingsKeys`** (`Settings/AppSettingsKeys.swift`): single source of truth for
   UserDefaults keys and defaults, shared between `SettingsView`'s `@AppStorage`

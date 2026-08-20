@@ -1,26 +1,25 @@
 import Foundation
+import Synchronization
 
-/// Lock-free single-producer/single-consumer ring buffer bridging the CoreAudio HAL I/O
-/// thread (producer, `write`) to the CVDisplayLink render thread (consumer, `drainInto`).
+/// Lock-free SPSC ring buffer bridging the CoreAudio HAL I/O thread (producer, `write`)
+/// to the CVDisplayLink render thread (consumer, `drainInto`).
 ///
-/// Only `writeIndex` is written by the producer and only `readIndex` is written by the
-/// consumer; each side only reads the other's index. Aligned Int loads/stores are atomic
-/// on Apple ARM64/x86-64. Indices grow monotonically and are only reduced mod `capacity`
-/// at buffer access.
+/// Each side writes only its own index: loads that one relaxed, the peer's with acquire,
+/// and publishes its own with release, so the samples an index exposes are visible before
+/// the index is. Indices grow monotonically, reduced mod `capacity` only at buffer access.
+/// `@unchecked` is for the raw pointers alone; all mutable state is atomic.
 final class AudioFeed: @unchecked Sendable {
     private let capacity: Int
     private let buffer: UnsafeMutablePointer<Float>
     private let scratch: UnsafeMutablePointer<Float>
 
-    private nonisolated(unsafe) var writeIndex: Int = 0
-    private nonisolated(unsafe) var readIndex: Int = 0
+    private let writeIndex = Atomic<Int>(0)
+    private let readIndex = Atomic<Int>(0)
 
-    // Debug-only diagnostics for the on-screen overlay. `peakLevel` is written by the
-    // producer (raised to the loudest sample seen) and reset by the consumer via
-    // `consumePeakLevel()`; `overflowCount` is written only by the producer. Neither is
-    // locked.
-    private nonisolated(unsafe) var peakLevel: Float = 0
-    private nonisolated(unsafe) var overflowCount: Int = 0
+    // Overlay diagnostics: they order nothing else, hence relaxed. `Float` isn't
+    // `AtomicRepresentable`, hence the bit pattern.
+    private let peakLevelBits = Atomic<UInt32>(0)
+    private let overflowCount = Atomic<Int>(0)
 
     /// `capacityFrames` stereo frames (2 floats/frame). Default ~93ms at 44.1kHz.
     init(capacityFrames: Int = 4096) {
@@ -36,16 +35,15 @@ final class AudioFeed: @unchecked Sendable {
         scratch.deallocate()
     }
 
-    /// Called from the HAL I/O thread. `samples` is interleaved stereo float PCM;
-    /// `sampleCount` is the total float count (frameCount * 2). Drops samples on overflow
-    /// rather than blocking.
+    /// HAL I/O thread. Interleaved stereo float PCM, `sampleCount` = frames * 2. Drops
+    /// samples on overflow rather than blocking.
     func write(samples: UnsafePointer<Float>, sampleCount: Int) {
-        let write = writeIndex
-        let used = write - readIndex
+        let write = writeIndex.load(ordering: .relaxed)
+        let used = write - readIndex.load(ordering: .acquiring)
         let free = capacity - used
         let count = min(sampleCount, free)
         guard count > 0 else {
-            if sampleCount > 0 { overflowCount += 1 }
+            if sampleCount > 0 { overflowCount.wrappingAdd(1, ordering: .relaxed) }
             return
         }
 
@@ -56,46 +54,57 @@ final class AudioFeed: @unchecked Sendable {
             let magnitude = abs(sample)
             if magnitude > peak { peak = magnitude }
         }
-        if peak > peakLevel { peakLevel = peak }
-        writeIndex = write + count
+        raisePeakLevel(to: peak)
+        writeIndex.store(write + count, ordering: .releasing)
 
         if count < sampleCount {
-            overflowCount += 1
+            overflowCount.wrappingAdd(1, ordering: .relaxed)
         }
     }
 
-    /// Called from the render thread. Returns the peak sample magnitude seen since the
-    /// last call and resets it.
+    /// Peak magnitude since the previous call, which it resets.
     func consumePeakLevel() -> Float {
-        let level = peakLevel
-        peakLevel = 0
-        return level
+        Float(bitPattern: peakLevelBits.exchange(0, ordering: .relaxed))
+    }
+
+    /// CAS rather than a store: the consumer can reset the peak concurrently.
+    private func raisePeakLevel(to peak: Float) {
+        var current = peakLevelBits.load(ordering: .relaxed)
+        while peak > Float(bitPattern: current) {
+            let (exchanged, original) = peakLevelBits.compareExchange(
+                expected: current,
+                desired: peak.bitPattern,
+                ordering: .relaxed
+            )
+            if exchanged { return }
+            current = original
+        }
     }
 
     /// Cumulative count of `write` calls that dropped samples because the buffer was full.
-    var totalOverflowCount: Int { overflowCount }
+    var totalOverflowCount: Int { overflowCount.load(ordering: .relaxed) }
 
-    /// Stereo frames currently queued (written but not yet drained), and the buffer's
-    /// total capacity in frames. Diagnostic only — read from either thread without
-    /// synchronization.
-    var backlogFrames: Int { (writeIndex - readIndex) / 2 }
+    /// Queued stereo frames. Diagnostic only — the indices are read separately, so the
+    /// difference can be a frame or two stale.
+    var backlogFrames: Int {
+        (writeIndex.load(ordering: .relaxed) - readIndex.load(ordering: .relaxed)) / 2
+    }
     var capacityFrames: Int { capacity / 2 }
 
-    /// Called from the render thread, once per frame. Drains up to
-    /// `projectm_pcm_get_max_samples()` stereo frames into projectM.
+    /// Render thread, once per frame. Drains up to `projectm_pcm_get_max_samples()`.
     func drainInto(pm: projectm_handle) {
         let maxFrames = Int(projectm_pcm_get_max_samples())
         let maxSamples = min(maxFrames * 2, capacity)
 
-        let read = readIndex
-        let available = writeIndex - read
+        let read = readIndex.load(ordering: .relaxed)
+        let available = writeIndex.load(ordering: .acquiring) - read
         guard available > 0 else { return }
 
         let count = min(available, maxSamples)
         for i in 0..<count {
             scratch[i] = buffer[(read + i) % capacity]
         }
-        readIndex = read + count
+        readIndex.store(read + count, ordering: .releasing)
 
         projectm_pcm_add_float(pm, scratch, UInt32(count / 2), PROJECTM_STEREO)
     }

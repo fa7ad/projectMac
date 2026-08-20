@@ -1,8 +1,7 @@
 import AppKit
 import CoreAudio
 
-/// A running application currently producing audio output, as discovered via the
-/// CoreAudio HAL process list.
+/// A running app currently producing audio output.
 struct AudioApp: Identifiable, Equatable {
     let pid: pid_t
     let name: String

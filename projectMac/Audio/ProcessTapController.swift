@@ -4,18 +4,15 @@
 
 import AudioToolbox
 import Foundation
+import Synchronization
 import os
 
-/// Captures one app's audio output via a CoreAudio process tap and feeds it into an
-/// `AudioFeed` ring buffer for visualization.
+/// Captures one app's audio output via a CoreAudio process tap into an `AudioFeed`.
 ///
-/// The tap's mute behavior is `.unmuted`: the tapped app keeps playing through its own
-/// normal output path untouched. The wrapping aggregate device exists only to give the
-/// tap's IOProc a clock source.
+/// Mute behavior is `.unmuted`, so the tapped app keeps playing normally; the wrapping
+/// aggregate device exists only to give the tap's IOProc a clock source.
 ///
-/// Call `activate()`/`invalidate()` from the main thread only. The audio callback itself
-/// runs on CoreAudio's real-time HAL I/O thread; see the RT-safety notes on
-/// `processAudioCallback`.
+/// `activate()`/`invalidate()` are main-thread only.
 final class ProcessTapController {
     let app: AudioApp
     private let logger: Logger
@@ -25,21 +22,18 @@ final class ProcessTapController {
     private var resources = TapResources()
     private var activated = false
 
-    /// RT-safe generation guard: the IOProc closure captures its own callbackID at
-    /// creation and compares against this on every invocation. A stale callback firing
-    /// during/after invalidate() (async teardown) zeroes output instead of writing into
-    /// a feed that may be getting reused by a newly-activated tap.
-    private nonisolated(unsafe) var callbackID: UInt32 = 0
+    /// Generation guard: the IOProc captures its own ID and compares on each call, so one
+    /// still firing during async teardown zeroes output rather than writing into a feed a
+    /// newly-activated tap may already own.
+    private let callbackID = Atomic<UInt32>(0)
     private var nextCallbackID: UInt32 = 0
 
-    // One-time buffer-shape diagnostics captured on the RT thread's first callback (plain
-    // value writes only, no allocation), read later from the main thread to log the tap's
-    // actual input buffer layout: a real tapped-audio buffer vs. a silent placeholder
-    // buffer contributed by the aggregate's clock sub-device.
-    private nonisolated(unsafe) var diagCaptured = false
-    private nonisolated(unsafe) var diagBufferCount = 0
-    private nonisolated(unsafe) var diagChannels: (Int, Int, Int, Int) = (0, 0, 0, 0)
-    private nonisolated(unsafe) var diagByteSizes: (Int, Int, Int, Int) = (0, 0, 0, 0)
+    // Input buffer layout, captured on the first callback (plain value writes, no
+    // allocation) and logged below. Same serial queue on both ends.
+    private var diagCaptured = false
+    private var diagBufferCount = 0
+    private var diagChannels: (Int, Int, Int, Int) = (0, 0, 0, 0)
+    private var diagByteSizes: (Int, Int, Int, Int) = (0, 0, 0, 0)
 
     init(app: AudioApp, audioFeed: AudioFeed) {
         self.app = app
@@ -100,11 +94,11 @@ final class ProcessTapController {
         }
 
         nextCallbackID += 1
-        callbackID = nextCallbackID
+        callbackID.store(nextCallbackID, ordering: .releasing)
         let activateCallbackID = nextCallbackID
         let feed = audioFeed
         err = AudioDeviceCreateIOProcIDWithBlock(&resources.deviceProcID, aggID, queue) { [weak self] _, inInputData, _, outOutputData, _ in
-            guard let self, self.callbackID == activateCallbackID else {
+            guard let self, self.callbackID.load(ordering: .acquiring) == activateCallbackID else {
                 let outputs = UnsafeMutableAudioBufferListPointer(outOutputData)
                 for buf in outputs {
                     if let data = buf.mData { memset(data, 0, Int(buf.mDataByteSize)) }
@@ -134,9 +128,8 @@ final class ProcessTapController {
                 channels=(\(diag.channels.0),\(diag.channels.1),\(diag.channels.2),\(diag.channels.3)) \
                 byteSizes=(\(diag.byteSizes.0),\(diag.byteSizes.1),\(diag.byteSizes.2),\(diag.byteSizes.3))
                 """
-            // `processAudioCallback` assumes the tap's own audio is always the *last*
-            // buffer and always 2-channel (guaranteed by requesting a stereo mixdown tap
-            // with exactly one sub-device + one tap in the aggregate).
+            // `processAudioCallback` assumes the tap's audio is the last buffer and
+            // 2-channel — guaranteed by one sub-device + one stereo mixdown tap.
             let allChannels = [diag.channels.0, diag.channels.1, diag.channels.2, diag.channels.3]
             let lastChannels = (1...4).contains(diag.bufferCount) ? allChannels[diag.bufferCount - 1] : -1
             if diag.bufferCount != 2 || lastChannels != 2 {
@@ -156,7 +149,7 @@ final class ProcessTapController {
     func invalidate() {
         guard activated else { return }
         activated = false
-        callbackID = 0
+        callbackID.store(0, ordering: .releasing)
         resources.destroyAsync()
         logger.info("Tap invalidated for \(self.app.name, privacy: .public)")
     }
@@ -167,7 +160,7 @@ final class ProcessTapController {
         }
     }
 
-    // MARK: - RT-Safe Audio Callback (runs on CoreAudio's real-time HAL I/O thread)
+    // MARK: - Audio callback, under real-time constraints
     // DO NOT: allocate, lock, use ObjC, log, or perform file/network I/O in here.
 
     nonisolated private func processAudioCallback(
@@ -203,15 +196,13 @@ final class ProcessTapController {
             let byteSize = Int(inputBuffer.mDataByteSize)
             let sampleCount = byteSize / MemoryLayout<Float>.size
 
-            // Only the last buffer is the tap's own audio; earlier buffers correspond to
-            // the aggregate's sub-devices (here, just the clock-source device) and carry
-            // silence, not real signal.
+            // Only the last buffer is the tap's audio; the earlier ones are the
+            // aggregate's sub-devices (just the clock source) and carry silence.
             if index == inputBuffers.count - 1, channels == 2 {
                 let samples = inputData.assumingMemoryBound(to: Float.self)
                 feed.write(samples: samples, sampleCount: sampleCount)
             }
 
-            // Pass-through: mirrors input into the matching output buffer.
             guard index < outputBuffers.count, let outputData = outputBuffers[index].mData else { continue }
             let outputByteSize = Int(outputBuffers[index].mDataByteSize)
             let copyLength = min(byteSize, outputByteSize)

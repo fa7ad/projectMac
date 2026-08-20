@@ -1,18 +1,15 @@
 import AppKit
 
-/// Owns the projectM playlist for one projectm_handle instance.
+/// Owns the projectM playlist for one projectm_handle.
 ///
-/// Playlist calls (`projectm_playlist_play_next`, etc.) can trigger preset loading, which
-/// touches GL resources. Every call here is wrapped in the same GL context lock that also
-/// guards `projectm_opengl_render_frame` on the CVDisplayLink thread.
+/// Playlist calls can trigger preset loading, which touches GL resources, so every one is
+/// wrapped in the same context lock that guards rendering on the CVDisplayLink thread.
 final class PresetManager {
     private let pm: projectm_handle
     private let glContext: NSOpenGLContext
-    private nonisolated(unsafe) var playlist: projectm_playlist_handle?
+    private var playlist: projectm_playlist_handle?
 
-    /// Fired after every preset change, with the preset's filename (no directory). Called
-    /// synchronously on whatever thread triggered the change (always the main thread in
-    /// this app, start()/nextPreset()/etc. are only ever called from AppKit/SwiftUI).
+    /// Fired after every preset change with the preset's filename.
     var onPresetChanged: ((String) -> Void)?
 
     init(pm: projectm_handle, glContext: NSOpenGLContext) {
@@ -20,9 +17,8 @@ final class PresetManager {
         self.glContext = glContext
     }
 
-    /// `shuffle` only governs subsequent next/prev ordering here — the startup preset
-    /// itself is always randomized below regardless of that setting, the same way
-    /// `randomPreset()` ignores it for an explicit one-off jump.
+    /// `shuffle` governs later next/prev ordering only: the startup preset is always
+    /// random, as is `randomPreset()`.
     func start(shuffle: Bool) {
         guard let playlist = projectm_playlist_create(pm) else { return }
         self.playlist = playlist
@@ -34,9 +30,6 @@ final class PresetManager {
             projectm_playlist_add_path(playlist, texturesPath, true, false)
         }
 
-        // Fires `onPresetChanged` for projectM's own automatic preset switches too (preset
-        // duration timeout, beat-driven hard cuts), not just calls made through
-        // nextPreset()/prevPreset()/etc. below.
         projectm_playlist_set_preset_switched_event_callback(playlist, Self.presetSwitchedCallback, Unmanaged.passUnretained(self).toOpaque())
 
         setShuffle(shuffle)
@@ -52,13 +45,10 @@ final class PresetManager {
         reportCurrentPreset()
     }
 
-    /// Fires on *any* preset switch, not just ones made through this class. Automatic
-    /// switches happen inside `projectm_opengl_render_frame`, running this on the
-    /// CVDisplayLink render thread in that case (vs. the main thread for
-    /// start()/nextPreset()/etc.). Both paths are already serialized by the same GL
-    /// context lock (`withLock` here, `ctx.lock()` around the render call in
-    /// `ProjectMGLView`). `reportCurrentPreset` hops to main before touching
-    /// `onPresetChanged`, which drives `@Observable` state.
+    /// Fires on *any* switch, including projectM's automatic ones (duration timeout, beat
+    /// cuts) — those run inside `projectm_opengl_render_frame`, so on the CVDisplayLink
+    /// thread. Both paths are serialized by the GL context lock, and `reportCurrentPreset`
+    /// hops to main before touching `@Observable` state.
     private static let presetSwitchedCallback: projectm_playlist_preset_switched_event = { _, _, userData in
         guard let userData else { return }
         Unmanaged<PresetManager>.fromOpaque(userData).takeUnretainedValue().reportCurrentPreset()
@@ -80,8 +70,7 @@ final class PresetManager {
         reportCurrentPreset()
     }
 
-    /// Jumps to a random playlist position, ignoring the shuffle setting: shuffle only
-    /// governs automatic next/prev ordering, this is an explicit one-off user request.
+    /// Ignores the shuffle setting: that governs next/prev ordering, this is a one-off.
     func randomPreset() {
         guard let playlist else { return }
         let size = projectm_playlist_size(playlist)

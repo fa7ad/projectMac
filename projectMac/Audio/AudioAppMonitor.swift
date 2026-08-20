@@ -2,13 +2,12 @@ import AppKit
 import CoreAudio
 import Observation
 
-/// Enumerates running applications currently producing audio output, via the
-/// CoreAudio HAL process object list.
+/// Enumerates apps currently producing audio, via the CoreAudio HAL process object list.
 @Observable
 final class AudioAppMonitor {
     private(set) var audioApps: [AudioApp] = []
 
-    /// Fired after every refresh (including the initial one from `start()`), on the main thread.
+    /// Fired on the main thread after every refresh, including `start()`'s.
     var onAppsChanged: (([AudioApp]) -> Void)?
 
     private var listenerBlock: AudioObjectPropertyListenerBlock?
@@ -17,8 +16,7 @@ final class AudioAppMonitor {
         mScope: kAudioObjectPropertyScopeGlobal,
         mElement: kAudioObjectPropertyElementMain
     )
-    /// A single process starting/stopping audio can fire the list listener several times
-    /// in quick succession.
+    /// One process starting or stopping audio can fire the listener several times.
     private var debounceWorkItem: DispatchWorkItem?
     /// The HAL never delivers change notifications for `kAudioProcessPropertyIsRunningOutput`.
     private var pollTimer: Timer?

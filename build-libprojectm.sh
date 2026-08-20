@@ -12,7 +12,7 @@ REPO="https://github.com/projectM-visualizer/projectm.git"
 SRC_DIR="vendor/projectm"
 BUILD_DIR="$SRC_DIR/build"
 PREFIX="${PREFIX:-/usr/local}"
-DEPLOYMENT_TARGET="${DEPLOYMENT_TARGET:-14.2}"
+DEPLOYMENT_TARGET="${DEPLOYMENT_TARGET:-15.0}"
 
 for tool in git cmake; do
   command -v "$tool" >/dev/null || { echo "$tool not found (brew install cmake)" >&2; exit 1; }

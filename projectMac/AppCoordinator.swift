@@ -2,10 +2,9 @@ import Foundation
 import Observation
 import os
 
-/// Shared app-level state that both the GL view and SwiftUI's `commands` menu need to
-/// reach: audio app discovery/tap selection, and (once the GL view creates it)
-/// preset navigation. Created once at app launch; the GL view attaches its
-/// `PresetManager` during `prepareOpenGL()`, once a live GL context exists.
+/// State both the GL view and SwiftUI's `commands` menu reach: audio app discovery and
+/// tap selection, plus preset navigation once the GL view attaches its `PresetManager`
+/// during `prepareOpenGL()` (which needs a live GL context to exist first).
 @Observable
 final class AppCoordinator {
     let audioAppMonitor = AudioAppMonitor()
@@ -13,14 +12,13 @@ final class AppCoordinator {
     let renderStats = RenderStats()
 
     private(set) var currentTappedPID: pid_t?
-    private nonisolated(unsafe) var tapController: ProcessTapController?
+    private var tapController: ProcessTapController?
     fileprivate(set) var presetManager: PresetManager?
 
     private let logger = Logger(subsystem: "com.projectmac.app", category: "AppCoordinator")
 
-    /// Wires up the preset-changed callback before `PresetManager.start()` loads the
-    /// first preset; `renderStats` picks up that initial load too, not just later
-    /// next/prev/random calls.
+    /// Wires the callback before `start()` loads the first preset, so `renderStats` sees
+    /// that load too.
     func attach(presetManager: PresetManager) {
         self.presetManager = presetManager
         presetManager.onPresetChanged = { [weak self] name in
@@ -29,7 +27,7 @@ final class AppCoordinator {
         }
     }
 
-    /// Called once `presetManager` is attached, and again whenever `SettingsView` changes a value.
+    /// Called once `presetManager` attaches, then on every `SettingsView` change.
     func applyPersistedSettings() {
         guard let presetManager else { return }
         let defaults = UserDefaults.standard

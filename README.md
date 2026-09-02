@@ -28,7 +28,7 @@ Components:
 - Preset navigation: next, previous, random, and shuffle over the ~9,800 presets in
   [presets-cream-of-the-crop](https://github.com/projectM-visualizer/presets-cream-of-the-crop)
 - On-screen debug overlay (`D`): FPS, current preset name, tapped app
-- Fullscreen (`F`); the visualization resizes with the window
+- Fullscreen (`F`, or a double-click on the visualization); it resizes with the window
 - Settings window (⌘,): beat sensitivity, preset duration, mesh quality, and shuffle,
   each applied without a restart
 
@@ -43,6 +43,8 @@ Components:
 | `D` | Toggle on-screen debug overlay |
 | `Escape` | Close window |
 | `Q` | Quit |
+
+Double-clicking the visualization toggles fullscreen too.
 
 Menu equivalents exist for preset navigation (⌘→ / ⌘← / ⌘R) and audio source selection
 (**Audio** menu).

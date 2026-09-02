@@ -11,7 +11,8 @@ final class RenderStats {
     var audioError: String?
     var isDebugOverlayVisible: Bool = false
     var isLoadingFirstPreset: Bool = true
-    /// Peak sample magnitude (0...1) seen in the audio ring buffer over the last ~1s.
+    /// Peak sample magnitude seen in the audio ring buffer over the last ~1s. Exceeds 1
+    /// when the tapped app's own output does; taps see it before the device clamps.
     var audioPeakLevel: Float = 0
     /// Ring-buffer writes that dropped samples because it was full.
     var audioOverflowCount: Int = 0

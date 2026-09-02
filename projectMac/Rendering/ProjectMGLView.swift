@@ -127,6 +127,14 @@ final class ProjectMGLView: NSOpenGLView {
         if let dl = displayLink { CVDisplayLinkStart(dl) }
     }
 
+    override func mouseDown(with event: NSEvent) {
+        guard event.clickCount == 2 else {
+            super.mouseDown(with: event)
+            return
+        }
+        window?.toggleFullScreen(nil)
+    }
+
     override func keyDown(with event: NSEvent) {
         switch event.charactersIgnoringModifiers?.lowercased() {
         case "n":

@@ -117,8 +117,9 @@ must only happen on the main thread.
   tabbing, so no second `ProjectMGLView` can attach over the first one's GL context.
 
 - **`ProjectMGLView`** (`Rendering/ProjectMGLView.swift`): an `NSOpenGLView` subclass
-  owning the `projectm_handle`, the `CVDisplayLink`, and keyboard shortcut handling
-  (`N`/`P`/`R`/`F`/`D`/`Q`/arrows/Escape). Wrapped for SwiftUI via
+  owning the `projectm_handle`, the `CVDisplayLink`, and input handling: keyboard
+  shortcuts (`N`/`P`/`R`/`F`/`D`/`Q`/arrows/Escape) plus double-click to toggle
+  fullscreen. Wrapped for SwiftUI via
   `ProjectMViewRepresentable`. `projectm_set_fps` is set once to a fixed `60` at
   creation, it's purely informational (fed to presets for their own calculations) and
   doesn't throttle the actual render cadence, which `CVDisplayLink` drives at the

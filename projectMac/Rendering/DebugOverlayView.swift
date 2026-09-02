@@ -13,6 +13,12 @@ struct DebugOverlayView: View {
                     .truncationMode(.middle)
             }
             Text(stats.tappedAppName.map { "Tapping: \($0)" } ?? "No audio source")
+            if let audioError = stats.audioError {
+                Text(audioError)
+                    .foregroundStyle(.red)
+                    .lineLimit(2)
+                    .truncationMode(.middle)
+            }
             Text(String(format: "Audio peak: %.3f", stats.audioPeakLevel))
                 .foregroundStyle(stats.audioPeakLevel > 0.001 ? .green : .white)
             Text("Buffer: \(stats.audioBacklogFrames)/\(stats.audioCapacityFrames) frames")

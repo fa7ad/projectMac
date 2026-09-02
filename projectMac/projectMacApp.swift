@@ -23,6 +23,10 @@ struct projectMacApp: App {
                 if coordinator.renderStats.isDebugOverlayVisible {
                     DebugOverlayView(stats: coordinator.renderStats)
                 }
+                if let audioError = coordinator.renderStats.audioError {
+                    AudioErrorBannerView(message: audioError)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                }
             }
             .frame(minWidth: 800, minHeight: 600)
         }
@@ -47,7 +51,7 @@ struct projectMacApp: App {
                         Button {
                             coordinator.selectApp(app)
                         } label: {
-                            if coordinator.currentTappedPID == app.pid {
+                            if coordinator.currentTappedAppID == app.id {
                                 Label(app.name, systemImage: "checkmark")
                             } else {
                                 Text(app.name)

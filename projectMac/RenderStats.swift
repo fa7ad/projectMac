@@ -6,6 +6,9 @@ final class RenderStats {
     var fps: Int = 0
     var presetName: String = ""
     var tappedAppName: String?
+    /// Last tap failure, cleared by the next successful tap. Surfaced by
+    /// `AudioErrorBannerView`, since a dead tap otherwise just looks like silence.
+    var audioError: String?
     var isDebugOverlayVisible: Bool = false
     var isLoadingFirstPreset: Bool = true
     /// Peak sample magnitude (0...1) seen in the audio ring buffer over the last ~1s.

@@ -3,6 +3,9 @@ import CoreAudio
 import Observation
 
 /// Enumerates apps currently producing audio, via the CoreAudio HAL process object list.
+///
+/// Process objects are grouped into app families (see `AppIdentity`) so a browser appears
+/// once under its own name rather than once per helper.
 @Observable
 final class AudioAppMonitor {
     private(set) var audioApps: [AudioApp] = []
@@ -20,6 +23,9 @@ final class AudioAppMonitor {
     private var debounceWorkItem: DispatchWorkItem?
     /// The HAL never delivers change notifications for `kAudioProcessPropertyIsRunningOutput`.
     private var pollTimer: Timer?
+    /// `AppIdentity` resolution hits the filesystem and LaunchServices; `refresh` runs
+    /// every second. Pruned to the PIDs still in the HAL list.
+    private var identityCache: [pid_t: AppIdentity] = [:]
 
     func start() {
         guard listenerBlock == nil else { return }
@@ -45,6 +51,7 @@ final class AudioAppMonitor {
         pollTimer = nil
         debounceWorkItem?.cancel()
         debounceWorkItem = nil
+        identityCache.removeAll()
     }
 
     private func scheduleRefresh() {
@@ -56,32 +63,57 @@ final class AudioAppMonitor {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05, execute: workItem)
     }
 
+    private struct Family {
+        let identity: AppIdentity
+        var processObjectIDs: Set<AudioObjectID> = []
+        /// At least one member is producing output; families without one stay hidden.
+        var isPlaying = false
+    }
+
     private func refresh() {
         guard let processIDs = try? AudioObjectID.readProcessObjectList() else { return }
 
         let ownPID = ProcessInfo.processInfo.processIdentifier
-        var apps: [AudioApp] = []
+        let ownBundleID = Bundle.main.bundleIdentifier
+        var families: [String: Family] = [:]
         var seenPIDs = Set<pid_t>()
+
         for objectID in processIDs {
-            guard objectID.readProcessIsRunningOutput() else { continue }
-            guard let pid = try? objectID.readProcessPID() else { continue }
-            guard pid != ownPID else { continue }
-            guard seenPIDs.insert(pid).inserted else { continue }
-            guard let runningApp = NSRunningApplication(processIdentifier: pid) else { continue }
+            guard let pid = try? objectID.readProcessPID(), pid > 0, pid != ownPID else { continue }
+            seenPIDs.insert(pid)
 
-            let name = runningApp.localizedName ?? objectID.readProcessBundleID() ?? "PID \(pid)"
-            apps.append(AudioApp(
-                pid: pid,
-                name: name,
-                bundleID: runningApp.bundleIdentifier,
-                icon: runningApp.icon,
-                processObjectIDs: [objectID]
-            ))
+            let identity: AppIdentity
+            if let cached = identityCache[pid] {
+                identity = cached
+            } else {
+                identity = AppIdentity(pid: pid)
+                identityCache[pid] = identity
+            }
+            guard identity.bundleID != ownBundleID else { continue }
+
+            var family = families[identity.key] ?? Family(identity: identity)
+            family.processObjectIDs.insert(objectID)
+            family.isPlaying = family.isPlaying || objectID.readProcessIsRunningOutput()
+            families[identity.key] = family
         }
+        identityCache = identityCache.filter { seenPIDs.contains($0.key) }
 
-        let sorted = apps.sorted { $0.name < $1.name }
-        guard sorted != audioApps else { return }
-        audioApps = sorted
+        let apps = families.values
+            .filter(\.isPlaying)
+            .map { family in
+                AudioApp(
+                    id: family.identity.key,
+                    name: family.identity.name,
+                    bundleID: family.identity.bundleID,
+                    icon: family.identity.icon,
+                    pid: family.identity.pid,
+                    processObjectIDs: family.processObjectIDs.sorted()
+                )
+            }
+            .sorted { $0.name < $1.name }
+
+        guard apps != audioApps else { return }
+        audioApps = apps
         onAppsChanged?(audioApps)
     }
 }

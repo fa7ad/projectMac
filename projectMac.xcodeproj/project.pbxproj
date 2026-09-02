@@ -14,6 +14,7 @@
 		230E8AD0C2CCBB60F3CA731B /* PresetManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDEBE2F01E5F07A0F5C7E18F /* PresetManager.swift */; };
 		2C9C325739CCF0FA6D2FFA89 /* AudioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F2B9DD1BC759D30B0B9BBFB /* AudioApp.swift */; };
 		3DE2C4C912ED61FD5722AA03 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3AB3F22010C317AB17582469 /* Assets.xcassets */; };
+		50E27854596574FBE2270B60 /* AppIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28D2B60387ECABB2F5434E53 /* AppIdentity.swift */; };
 		58ADFD0B2464A3F66BF41004 /* ProjectMViewRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B46DA5167DA290CB71BBC15 /* ProjectMViewRepresentable.swift */; };
 		624780E650A39E063138FCAB /* DebugOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEC64E855BEE28F22E040271 /* DebugOverlayView.swift */; };
 		6AE11A4F26968C7E10C7C9EE /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AFB7C76485D87754950E3DFD /* CoreAudio.framework */; };
@@ -28,13 +29,16 @@
 		C41148EFF4BFE568CF2BB1CD /* ProjectMGLView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8678923C4766918FDA5E2909 /* ProjectMGLView.swift */; };
 		C4892C6EB0B0B26520D77C05 /* ProcessTapController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7291DF9CE47D314A3CE4ADA1 /* ProcessTapController.swift */; };
 		FC1F2EA4F65EB06426AFA962 /* TapResources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E5A55BF116FCEB40A59904A /* TapResources.swift */; };
+		FD0A36F04E22385288CE055B /* AudioErrorBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54BC0553F5639006BC125F2D /* AudioErrorBannerView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		28D2B60387ECABB2F5434E53 /* AppIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIdentity.swift; sourceTree = "<group>"; };
 		2DA95975CE43223FEC0B5367 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
 		352B1F03A05CF0AD0825F07A /* projectMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = projectMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3AB3F22010C317AB17582469 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4BB0ED0F294D60A71CCA433D /* AudioAppMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAppMonitor.swift; sourceTree = "<group>"; };
+		54BC0553F5639006BC125F2D /* AudioErrorBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioErrorBannerView.swift; sourceTree = "<group>"; };
 		5A9B33401E546EFA6347A6D8 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		5E127A08007AF2E6F6FAAAFA /* projectMac.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = projectMac.entitlements; sourceTree = "<group>"; };
 		6E5A55BF116FCEB40A59904A /* TapResources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapResources.swift; sourceTree = "<group>"; };
@@ -141,6 +145,7 @@
 		E0687427DA5EE2E3054CE1A0 /* Audio */ = {
 			isa = PBXGroup;
 			children = (
+				28D2B60387ECABB2F5434E53 /* AppIdentity.swift */,
 				6F2B9DD1BC759D30B0B9BBFB /* AudioApp.swift */,
 				4BB0ED0F294D60A71CCA433D /* AudioAppMonitor.swift */,
 				9C50285D4AFC57F4FC97846D /* AudioFeed.swift */,
@@ -162,6 +167,7 @@
 		E92B0BE58AF2EB92211AC311 /* Rendering */ = {
 			isa = PBXGroup;
 			children = (
+				54BC0553F5639006BC125F2D /* AudioErrorBannerView.swift */,
 				EEC64E855BEE28F22E040271 /* DebugOverlayView.swift */,
 				C940D4086322443387255EB7 /* LoadingOverlayView.swift */,
 				8678923C4766918FDA5E2909 /* ProjectMGLView.swift */,
@@ -284,9 +290,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				0364301F756B0FA4F6734001 /* AppCoordinator.swift in Sources */,
+				50E27854596574FBE2270B60 /* AppIdentity.swift in Sources */,
 				85D73E2A449731E122183F07 /* AppSettingsKeys.swift in Sources */,
 				2C9C325739CCF0FA6D2FFA89 /* AudioApp.swift in Sources */,
 				A8F6F494CBE2B5EBC43177B3 /* AudioAppMonitor.swift in Sources */,
+				FD0A36F04E22385288CE055B /* AudioErrorBannerView.swift in Sources */,
 				9CA5FB9477567EDF98BF6BD7 /* AudioFeed.swift in Sources */,
 				8742EEE0CD4BE679C973797C /* CoreAudioExtensions.swift in Sources */,
 				624780E650A39E063138FCAB /* DebugOverlayView.swift in Sources */,

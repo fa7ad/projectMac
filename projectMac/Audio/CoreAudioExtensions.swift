@@ -1,3 +1,4 @@
+import AudioToolbox
 import CoreAudio
 import Foundation
 
@@ -69,6 +70,14 @@ extension AudioObjectID {
 
     func readProcessIsRunningOutput() -> Bool {
         ((try? readScalar(kAudioProcessPropertyIsRunningOutput)) ?? UInt32(0)) == 1
+    }
+
+    // MARK: - Tap properties
+
+    /// The tap's own stream format, readable as soon as the tap exists — before the first
+    /// IOProc callback, so an unusable format fails activation instead of silence.
+    func readTapStreamBasicDescription() throws -> AudioStreamBasicDescription {
+        try readScalar(kAudioTapPropertyFormat)
     }
 
     // MARK: - Device properties

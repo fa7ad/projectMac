@@ -7,7 +7,7 @@ import Foundation
 import Synchronization
 import os
 
-/// Captures one app's audio output via a CoreAudio process tap into an `AudioFeed`.
+/// Captures one app family's audio output via a CoreAudio process tap into an `AudioFeed`.
 ///
 /// Mute behavior is `.unmuted`, so the tapped app keeps playing normally; the wrapping
 /// aggregate device exists only to give the tap's IOProc a clock source.
@@ -15,12 +15,19 @@ import os
 /// `activate()`/`invalidate()` are main-thread only.
 final class ProcessTapController {
     let app: AudioApp
+    /// The device the aggregate is clocked by, captured at activation. Once the default
+    /// output device moves off it, `AppCoordinator` rebuilds the tap.
+    private(set) var clockDeviceUID: String?
+    /// Reports a tap that activated cleanly but is not delivering audio. Main thread.
+    var onFailure: ((String) -> Void)?
+
     private let logger: Logger
     private let queue = DispatchQueue(label: "ProcessTapController", qos: .userInitiated)
     private let audioFeed: AudioFeed
 
     private var resources = TapResources()
     private var activated = false
+    private var deliveryCheck: DispatchWorkItem?
 
     /// Generation guard: the IOProc captures its own ID and compares on each call, so one
     /// still firing during async teardown zeroes output rather than writing into a feed a
@@ -28,12 +35,14 @@ final class ProcessTapController {
     private let callbackID = Atomic<UInt32>(0)
     private var nextCallbackID: UInt32 = 0
 
-    // Input buffer layout, captured on the first callback (plain value writes, no
-    // allocation) and logged below. Same serial queue on both ends.
-    private var diagCaptured = false
-    private var diagBufferCount = 0
-    private var diagChannels: (Int, Int, Int, Int) = (0, 0, 0, 0)
-    private var diagByteSizes: (Int, Int, Int, Int) = (0, 0, 0, 0)
+    /// Liveness counters for `reportDeliveryFailure`. The validated tap format promises a
+    /// stereo float32 buffer, but not where the aggregate places it in the input list, so
+    /// the callback's choice is still checked at runtime — loudly, since a miss means
+    /// silence rather than a crash.
+    private let callbackCount = Atomic<Int>(0)
+    private let unusableCallbackCount = Atomic<Int>(0)
+    private let lastInputBufferCount = Atomic<Int>(0)
+    private let lastTapBufferChannels = Atomic<Int>(0)
 
     init(app: AudioApp, audioFeed: AudioFeed) {
         self.app = app
@@ -57,10 +66,13 @@ final class ProcessTapController {
         resources.tapDescription = tapDescription
         resources.tapID = tapID
 
+        try validateTapFormat(tapID)
+
         guard let clockDeviceUID = try? AudioObjectID.defaultOutputDevice().readDeviceUID() else {
             resources.destroy()
             throw NSError(domain: "ProcessTapController", code: -1, userInfo: [NSLocalizedDescriptionKey: "Could not read default output device UID"])
         }
+        self.clockDeviceUID = clockDeviceUID
 
         let description: [String: Any] = [
             kAudioAggregateDeviceNameKey: "projectMac-\(app.pid)",
@@ -119,42 +131,76 @@ final class ProcessTapController {
         }
 
         activated = true
-        logger.info("Tap activated for \(self.app.name, privacy: .public)")
+        logger.info("Tap activated for \(self.app.name, privacy: .public) over \(self.app.processObjectIDs.count) process object(s)")
 
-        queue.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            guard let self, let diag = self.consumeDiagnosticsIfReady() else { return }
-            let shape = """
-                buffers=\(diag.bufferCount) \
-                channels=(\(diag.channels.0),\(diag.channels.1),\(diag.channels.2),\(diag.channels.3)) \
-                byteSizes=(\(diag.byteSizes.0),\(diag.byteSizes.1),\(diag.byteSizes.2),\(diag.byteSizes.3))
-                """
-            // `processAudioCallback` assumes the tap's audio is the last buffer and
-            // 2-channel — guaranteed by one sub-device + one stereo mixdown tap.
-            let allChannels = [diag.channels.0, diag.channels.1, diag.channels.2, diag.channels.3]
-            let lastChannels = (1...4).contains(diag.bufferCount) ? allChannels[diag.bufferCount - 1] : -1
-            if diag.bufferCount != 2 || lastChannels != 2 {
-                self.logger.warning("Tap input buffer shape is unexpected, audio capture may be broken: \(shape, privacy: .public)")
-            } else {
-                self.logger.debug("Tap input buffer shape: \(shape, privacy: .public)")
-            }
+        // On main: the check reads nothing but atomics, and `onFailure` lands where the
+        // UI can use it without a second hop.
+        let check = DispatchWorkItem { [weak self] in
+            self?.reportDeliveryFailure(for: activateCallbackID)
         }
+        deliveryCheck = check
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: check)
     }
 
-    private func consumeDiagnosticsIfReady() -> (bufferCount: Int, channels: (Int, Int, Int, Int), byteSizes: (Int, Int, Int, Int))? {
-        guard diagCaptured else { return nil }
-        return (diagBufferCount, diagChannels, diagByteSizes)
+    /// The tap's format is fixed once it exists, so an unusable one fails activation here
+    /// rather than turning into a callback that quietly writes nothing.
+    private func validateTapFormat(_ tapID: AudioObjectID) throws {
+        guard let asbd = try? tapID.readTapStreamBasicDescription() else {
+            // Not fatal: `reportDeliveryFailure` still catches a tap that delivers nothing.
+            logger.warning("Could not read tap stream format, proceeding on the callback's own checks")
+            return
+        }
+
+        let isFloat = asbd.mFormatFlags & kAudioFormatFlagIsFloat != 0
+        let isInterleaved = asbd.mFormatFlags & kAudioFormatFlagIsNonInterleaved == 0
+        guard asbd.mFormatID == kAudioFormatLinearPCM, isFloat, isInterleaved,
+              asbd.mBitsPerChannel == 32, asbd.mChannelsPerFrame == 2 else {
+            let actual = "\(asbd.mChannelsPerFrame)ch \(asbd.mBitsPerChannel)-bit \(Int(asbd.mSampleRate))Hz flags=0x\(String(asbd.mFormatFlags, radix: 16))"
+            resources.destroy()
+            throw NSError(domain: "ProcessTapController", code: -2, userInfo: [
+                NSLocalizedDescriptionKey: "Tap for \(app.name) has an unsupported format (\(actual)); expected interleaved stereo float32"
+            ])
+        }
+        logger.debug("Tap format: 2ch float32 \(Int(asbd.mSampleRate), privacy: .public)Hz")
+    }
+
+    /// Runs on the main thread once, a second after activation: a tap that is running but
+    /// feeding nothing is indistinguishable from silence, so say so instead of rendering a
+    /// still frame.
+    private func reportDeliveryFailure(for generation: UInt32) {
+        guard callbackID.load(ordering: .acquiring) == generation else { return }
+
+        let callbacks = callbackCount.load(ordering: .relaxed)
+        let unusable = unusableCallbackCount.load(ordering: .relaxed)
+        let message: String
+        if callbacks == 0 {
+            message = "No audio from \(app.name): the tap started but never delivered a buffer"
+        } else if unusable == callbacks {
+            let buffers = lastInputBufferCount.load(ordering: .relaxed)
+            let channels = lastTapBufferChannels.load(ordering: .relaxed)
+            message = "No audio from \(app.name): unexpected tap buffer layout (\(buffers) input buffers, \(channels) channels)"
+        } else {
+            logger.debug("Tap delivering: \(callbacks, privacy: .public) callbacks, \(unusable, privacy: .public) unusable")
+            return
+        }
+
+        logger.error("\(message, privacy: .public)")
+        onFailure?(message)
     }
 
     /// Safe to call multiple times, subsequent calls are no-ops.
     func invalidate() {
         guard activated else { return }
         activated = false
+        deliveryCheck?.cancel()
+        deliveryCheck = nil
         callbackID.store(0, ordering: .releasing)
         resources.destroyAsync()
         logger.info("Tap invalidated for \(self.app.name, privacy: .public)")
     }
 
     deinit {
+        deliveryCheck?.cancel()
         if activated {
             resources.destroyAsync()
         }
@@ -172,23 +218,8 @@ final class ProcessTapController {
         // SAFETY: mutable cast required by the API; we only read through this pointer.
         let inputBuffers = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: inputBufferList))
 
-        if !diagCaptured {
-            var channels = (0, 0, 0, 0)
-            var byteSizes = (0, 0, 0, 0)
-            for (index, buf) in inputBuffers.enumerated() where index < 4 {
-                switch index {
-                case 0: channels.0 = Int(buf.mNumberChannels); byteSizes.0 = Int(buf.mDataByteSize)
-                case 1: channels.1 = Int(buf.mNumberChannels); byteSizes.1 = Int(buf.mDataByteSize)
-                case 2: channels.2 = Int(buf.mNumberChannels); byteSizes.2 = Int(buf.mDataByteSize)
-                case 3: channels.3 = Int(buf.mNumberChannels); byteSizes.3 = Int(buf.mDataByteSize)
-                default: break
-                }
-            }
-            diagBufferCount = inputBuffers.count
-            diagChannels = channels
-            diagByteSizes = byteSizes
-            diagCaptured = true
-        }
+        callbackCount.wrappingAdd(1, ordering: .relaxed)
+        var wroteSamples = false
 
         for (index, inputBuffer) in inputBuffers.enumerated() {
             guard let inputData = inputBuffer.mData else { continue }
@@ -198,9 +229,13 @@ final class ProcessTapController {
 
             // Only the last buffer is the tap's audio; the earlier ones are the
             // aggregate's sub-devices (just the clock source) and carry silence.
-            if index == inputBuffers.count - 1, channels == 2 {
-                let samples = inputData.assumingMemoryBound(to: Float.self)
-                feed.write(samples: samples, sampleCount: sampleCount)
+            if index == inputBuffers.count - 1 {
+                lastTapBufferChannels.store(channels, ordering: .relaxed)
+                if channels == 2 {
+                    let samples = inputData.assumingMemoryBound(to: Float.self)
+                    feed.write(samples: samples, sampleCount: sampleCount)
+                    wroteSamples = true
+                }
             }
 
             guard index < outputBuffers.count, let outputData = outputBuffers[index].mData else { continue }
@@ -210,6 +245,11 @@ final class ProcessTapController {
             if copyLength < outputByteSize {
                 memset(outputData.advanced(by: copyLength), 0, outputByteSize - copyLength)
             }
+        }
+
+        lastInputBufferCount.store(inputBuffers.count, ordering: .relaxed)
+        if !wroteSamples {
+            unusableCallbackCount.wrappingAdd(1, ordering: .relaxed)
         }
 
         if outputBuffers.count > inputBuffers.count {

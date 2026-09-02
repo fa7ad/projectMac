@@ -1,18 +1,22 @@
 import AppKit
 import CoreAudio
 
-/// A running app currently producing audio output.
+/// One app family currently producing audio output.
 struct AudioApp: Identifiable, Equatable {
-    let pid: pid_t
+    /// `AppIdentity.key`: stable across helper-process churn.
+    let id: String
     let name: String
     let bundleID: String?
     let icon: NSImage?
-    /// Process object IDs to pass to `CATapDescription(stereoMixdownOfProcesses:)`.
+    /// Representative PID, for display and the aggregate device name only.
+    let pid: pid_t
+    /// Every process object in the family, passed to
+    /// `CATapDescription(stereoMixdownOfProcesses:)` so helpers that begin playing mid-tap
+    /// are already covered. Sorted, so `==` is order-independent.
     let processObjectIDs: [AudioObjectID]
 
-    var id: pid_t { pid }
-
+    /// Includes the process set: a family that gained a member needs its tap rebuilt.
     static func == (lhs: AudioApp, rhs: AudioApp) -> Bool {
-        lhs.pid == rhs.pid
+        lhs.id == rhs.id && lhs.name == rhs.name && lhs.processObjectIDs == rhs.processObjectIDs
     }
 }

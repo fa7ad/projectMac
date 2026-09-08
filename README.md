@@ -27,10 +27,47 @@ Components:
   audio; the first one found is selected at launch. Changing it takes effect without a restart.
 - Preset navigation: next, previous, random, and shuffle over the ~9,800 presets in
   [presets-cream-of-the-crop](https://github.com/projectM-visualizer/presets-cream-of-the-crop)
-- On-screen debug overlay (`D`): FPS, current preset name, tapped app
+- On-screen debug overlay (`D`): FPS, current preset name, tapped app, and live audio
+  diagnostics (peak level, ring-buffer backlog/overflow)
 - Fullscreen (`F`, or a double-click on the visualization); it resizes with the window
-- Settings window (⌘,): beat sensitivity, preset duration, mesh quality, and shuffle,
-  each applied without a restart
+- Optional scene stream: broadcasts tempo (both audio-beat-derived and, separately,
+  visual-onset-derived, since a preset's on-screen cut rate doesn't always track the
+  song's BPM), dominant color (vibrant/muted/average swatches, HSV), brightness,
+  bass/mid/treble levels, and preset-change events as OSC (Open Sound Control) messages
+  over a local UDP socket, for any OSC-aware process to consume — e.g. Chataigne bridging
+  to music-reactive smart-home lighting, or TouchDesigner
+
+## Settings
+
+⌘, opens the Settings window: mesh quality (render resolution), beat sensitivity, preset
+duration, shuffle, and the scene-stream broadcast toggle — all applied live, no restart
+needed.
+
+## Scene stream (OSC)
+
+When "Broadcast scene stream" is on, projectMac sends OSC (Open Sound Control) messages
+over a loopback UDP socket (`127.0.0.1:9000` by default), one address per datagram, for
+any OSC-aware process to consume — e.g. Chataigne bridging to smart-home lighting, or
+TouchDesigner. It's deliberately a generic source with no consumer-specific logic:
+audio- and visual-derived tempo are broadcast side by side rather than picking a winner,
+since a preset's on-screen cut rate doesn't always track the song's BPM.
+
+| Address | Args | Description |
+|---|---|---|
+| `/projectmac/tempo/bpm` | `f` | Audio energy-onset BPM estimate |
+| `/projectmac/tempo/phase` | `f` | 0.0-1.0 position within the current audio beat interval |
+| `/projectmac/visual/bpm` | `f` | Visual onset detector's rate estimate, same units/shape as `tempo/bpm` |
+| `/projectmac/visual/phase` | `f` | Same, visual-onset-side |
+| `/projectmac/visual/onset` | *(bang)* | Fired the instant a visual onset is detected |
+| `/projectmac/scene/brightness` | `f` | Rec. 709 luma of the sampled color, 0.0-1.0 |
+| `/projectmac/scene/vibrant` | `f f f` | Saturation/population-weighted dominant swatch, HSV (hue as a fraction of the circle) |
+| `/projectmac/scene/muted` | `f f f` | Second, larger/less-saturated surviving cluster, HSV |
+| `/projectmac/scene/average` | `f f f` | Flat-average color, HSV |
+| `/projectmac/audio/bass` | `f` | FFT band energy, 0.0-1.0 |
+| `/projectmac/audio/mid` | `f` | FFT band energy, 0.0-1.0 |
+| `/projectmac/audio/treble` | `f` | FFT band energy, 0.0-1.0 |
+| `/projectmac/preset/changed` | *(bang)* | Fired on every projectM preset switch |
+| `/projectmac/preset/name` | `s` | The new preset's name, sent alongside the bang |
 
 ## Keyboard shortcuts
 
@@ -116,6 +153,11 @@ gitignored, so your team ID stays off the repo.
 Audio flows: CoreAudio HAL I/O thread (process tap) to lock-free ring buffer to CVDisplayLink
 render thread to `projectm_pcm_add_float`. The render loop and any preset/settings changes
 share a GL context lock, so they do not run concurrently.
+
+When the scene stream is on, the render thread does only the minimal GL-bound
+framebuffer readback each frame; every reduction downstream of that (dominant-color
+clustering, onset detection, FFT band split, OSC send) runs on its own serial
+background queue instead, so it can't add render-thread cost.
 
 ## Acknowledgments
 

@@ -13,11 +13,18 @@
 		2176C63DE83FF11C774324D3 /* LoadingOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C940D4086322443387255EB7 /* LoadingOverlayView.swift */; };
 		230E8AD0C2CCBB60F3CA731B /* PresetManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDEBE2F01E5F07A0F5C7E18F /* PresetManager.swift */; };
 		2C9C325739CCF0FA6D2FFA89 /* AudioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F2B9DD1BC759D30B0B9BBFB /* AudioApp.swift */; };
+		3CCC72A0790913FB3196FF4A /* SceneStreamBroadcaster.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18897FE143A02E88846D5A2C /* SceneStreamBroadcaster.swift */; };
 		3DE2C4C912ED61FD5722AA03 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3AB3F22010C317AB17582469 /* Assets.xcassets */; };
+		444B67325ED7FD0314F7BF9F /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD944B278F01FC34CFD00CBE /* Accelerate.framework */; };
 		50E27854596574FBE2270B60 /* AppIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28D2B60387ECABB2F5434E53 /* AppIdentity.swift */; };
 		58ADFD0B2464A3F66BF41004 /* ProjectMViewRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B46DA5167DA290CB71BBC15 /* ProjectMViewRepresentable.swift */; };
+		5D7B5C7235860EA14C7C19EE /* SceneReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1285155A06E8113348983C75 /* SceneReducer.swift */; };
 		624780E650A39E063138FCAB /* DebugOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEC64E855BEE28F22E040271 /* DebugOverlayView.swift */; };
 		6AE11A4F26968C7E10C7C9EE /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AFB7C76485D87754950E3DFD /* CoreAudio.framework */; };
+		788329D225681317B1F78C76 /* BeatDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAF9D0BB5268928FE1A815AE /* BeatDetector.swift */; };
+		7C718B2DBEDDE6070ABFF9B9 /* AudioBandAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 939889107B3EA605D89832A6 /* AudioBandAnalyzer.swift */; };
+		7D7EABD0BB04677C0F44C226 /* VisualOnsetDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7020A24DDB7111AF01557CEC /* VisualOnsetDetector.swift */; };
+		7E2C75549AE0E76D7DA9DA6E /* Network.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CA8A2682D0D3F7882B711837 /* Network.framework */; };
 		81E7F1428DED46250BD502D6 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5A9B33401E546EFA6347A6D8 /* AVFoundation.framework */; };
 		85D73E2A449731E122183F07 /* AppSettingsKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7586C03F8E60484DBB54590 /* AppSettingsKeys.swift */; };
 		8742EEE0CD4BE679C973797C /* CoreAudioExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D97E7379DC1E39A879EFCD /* CoreAudioExtensions.swift */; };
@@ -26,6 +33,7 @@
 		A8F6F494CBE2B5EBC43177B3 /* AudioAppMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB0ED0F294D60A71CCA433D /* AudioAppMonitor.swift */; };
 		B56FCF1D57B56A9BCA83B11D /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBE1244B292E31110D11ECF0 /* SettingsView.swift */; };
 		BE64AB2B960C501A40A87D3B /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D046BDAADB25FF1DDD2263B3 /* OpenGL.framework */; };
+		C3A3EE0449703A722CF6B125 /* DominantColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02D4743C31468CF32E5BF67D /* DominantColor.swift */; };
 		C41148EFF4BFE568CF2BB1CD /* ProjectMGLView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8678923C4766918FDA5E2909 /* ProjectMGLView.swift */; };
 		C4892C6EB0B0B26520D77C05 /* ProcessTapController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7291DF9CE47D314A3CE4ADA1 /* ProcessTapController.swift */; };
 		FC1F2EA4F65EB06426AFA962 /* TapResources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E5A55BF116FCEB40A59904A /* TapResources.swift */; };
@@ -33,6 +41,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		02D4743C31468CF32E5BF67D /* DominantColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DominantColor.swift; sourceTree = "<group>"; };
+		1285155A06E8113348983C75 /* SceneReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneReducer.swift; sourceTree = "<group>"; };
+		18897FE143A02E88846D5A2C /* SceneStreamBroadcaster.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneStreamBroadcaster.swift; sourceTree = "<group>"; };
 		28D2B60387ECABB2F5434E53 /* AppIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIdentity.swift; sourceTree = "<group>"; };
 		2DA95975CE43223FEC0B5367 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
 		352B1F03A05CF0AD0825F07A /* projectMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = projectMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -43,18 +54,23 @@
 		5E127A08007AF2E6F6FAAAFA /* projectMac.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = projectMac.entitlements; sourceTree = "<group>"; };
 		6E5A55BF116FCEB40A59904A /* TapResources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapResources.swift; sourceTree = "<group>"; };
 		6F2B9DD1BC759D30B0B9BBFB /* AudioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioApp.swift; sourceTree = "<group>"; };
+		7020A24DDB7111AF01557CEC /* VisualOnsetDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualOnsetDetector.swift; sourceTree = "<group>"; };
 		7291DF9CE47D314A3CE4ADA1 /* ProcessTapController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTapController.swift; sourceTree = "<group>"; };
 		8678923C4766918FDA5E2909 /* ProjectMGLView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectMGLView.swift; sourceTree = "<group>"; };
 		8BC751495B7B217BB5885958 /* RenderStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenderStats.swift; sourceTree = "<group>"; };
+		939889107B3EA605D89832A6 /* AudioBandAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioBandAnalyzer.swift; sourceTree = "<group>"; };
 		9B46DA5167DA290CB71BBC15 /* ProjectMViewRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectMViewRepresentable.swift; sourceTree = "<group>"; };
 		9C2ECF1BF711F3A8585B07C4 /* projectm-bridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "projectm-bridge.h"; sourceTree = "<group>"; };
 		9C50285D4AFC57F4FC97846D /* AudioFeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioFeed.swift; sourceTree = "<group>"; };
 		A1D97E7379DC1E39A879EFCD /* CoreAudioExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreAudioExtensions.swift; sourceTree = "<group>"; };
 		AFB7C76485D87754950E3DFD /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		B7586C03F8E60484DBB54590 /* AppSettingsKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettingsKeys.swift; sourceTree = "<group>"; };
+		BAF9D0BB5268928FE1A815AE /* BeatDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeatDetector.swift; sourceTree = "<group>"; };
 		C940D4086322443387255EB7 /* LoadingOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingOverlayView.swift; sourceTree = "<group>"; };
+		CA8A2682D0D3F7882B711837 /* Network.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Network.framework; path = System/Library/Frameworks/Network.framework; sourceTree = SDKROOT; };
 		CDEBE2F01E5F07A0F5C7E18F /* PresetManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresetManager.swift; sourceTree = "<group>"; };
 		D046BDAADB25FF1DDD2263B3 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
+		DD944B278F01FC34CFD00CBE /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		E0EF34A472A572AAA4B7C0C2 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		EBE1244B292E31110D11ECF0 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		EEC64E855BEE28F22E040271 /* DebugOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugOverlayView.swift; sourceTree = "<group>"; };
@@ -72,6 +88,8 @@
 				6AE11A4F26968C7E10C7C9EE /* CoreAudio.framework in Frameworks */,
 				07F1340F1A9B63740D6B0D28 /* AudioToolbox.framework in Frameworks */,
 				81E7F1428DED46250BD502D6 /* AVFoundation.framework in Frameworks */,
+				7E2C75549AE0E76D7DA9DA6E /* Network.framework in Frameworks */,
+				444B67325ED7FD0314F7BF9F /* Accelerate.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -107,6 +125,7 @@
 				61BF34095C08E5B0CC417993 /* Presets */,
 				E92B0BE58AF2EB92211AC311 /* Rendering */,
 				495208AD46AE6D460911229C /* Resources */,
+				B0229CF38A39BC82F4C8EF71 /* SceneStream */,
 				8FEAEAC8D51C4A87BBB44EF3 /* Settings */,
 			);
 			path = projectMac;
@@ -134,12 +153,27 @@
 		ACB5956E0F66E6CAD2A4AC67 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				DD944B278F01FC34CFD00CBE /* Accelerate.framework */,
 				E0EF34A472A572AAA4B7C0C2 /* AudioToolbox.framework */,
 				5A9B33401E546EFA6347A6D8 /* AVFoundation.framework */,
 				AFB7C76485D87754950E3DFD /* CoreAudio.framework */,
+				CA8A2682D0D3F7882B711837 /* Network.framework */,
 				D046BDAADB25FF1DDD2263B3 /* OpenGL.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		B0229CF38A39BC82F4C8EF71 /* SceneStream */ = {
+			isa = PBXGroup;
+			children = (
+				939889107B3EA605D89832A6 /* AudioBandAnalyzer.swift */,
+				BAF9D0BB5268928FE1A815AE /* BeatDetector.swift */,
+				02D4743C31468CF32E5BF67D /* DominantColor.swift */,
+				1285155A06E8113348983C75 /* SceneReducer.swift */,
+				18897FE143A02E88846D5A2C /* SceneStreamBroadcaster.swift */,
+				7020A24DDB7111AF01557CEC /* VisualOnsetDetector.swift */,
+			);
+			path = SceneStream;
 			sourceTree = "<group>";
 		};
 		E0687427DA5EE2E3054CE1A0 /* Audio */ = {
@@ -294,18 +328,24 @@
 				85D73E2A449731E122183F07 /* AppSettingsKeys.swift in Sources */,
 				2C9C325739CCF0FA6D2FFA89 /* AudioApp.swift in Sources */,
 				A8F6F494CBE2B5EBC43177B3 /* AudioAppMonitor.swift in Sources */,
+				7C718B2DBEDDE6070ABFF9B9 /* AudioBandAnalyzer.swift in Sources */,
 				FD0A36F04E22385288CE055B /* AudioErrorBannerView.swift in Sources */,
 				9CA5FB9477567EDF98BF6BD7 /* AudioFeed.swift in Sources */,
+				788329D225681317B1F78C76 /* BeatDetector.swift in Sources */,
 				8742EEE0CD4BE679C973797C /* CoreAudioExtensions.swift in Sources */,
 				624780E650A39E063138FCAB /* DebugOverlayView.swift in Sources */,
+				C3A3EE0449703A722CF6B125 /* DominantColor.swift in Sources */,
 				2176C63DE83FF11C774324D3 /* LoadingOverlayView.swift in Sources */,
 				230E8AD0C2CCBB60F3CA731B /* PresetManager.swift in Sources */,
 				C4892C6EB0B0B26520D77C05 /* ProcessTapController.swift in Sources */,
 				C41148EFF4BFE568CF2BB1CD /* ProjectMGLView.swift in Sources */,
 				58ADFD0B2464A3F66BF41004 /* ProjectMViewRepresentable.swift in Sources */,
 				0ACE38119D2515C1C59EAFFE /* RenderStats.swift in Sources */,
+				5D7B5C7235860EA14C7C19EE /* SceneReducer.swift in Sources */,
+				3CCC72A0790913FB3196FF4A /* SceneStreamBroadcaster.swift in Sources */,
 				B56FCF1D57B56A9BCA83B11D /* SettingsView.swift in Sources */,
 				FC1F2EA4F65EB06426AFA962 /* TapResources.swift in Sources */,
+				7D7EABD0BB04677C0F44C226 /* VisualOnsetDetector.swift in Sources */,
 				99709582C3F5C74A40808FFC /* projectMacApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -327,7 +367,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.3.0;
+				MARKETING_VERSION = 0.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.projectmac.app;
 				PRODUCT_NAME = projectMac;
 				SDKROOT = macosx;
@@ -348,7 +388,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.3.0;
+				MARKETING_VERSION = 0.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.projectmac.app;
 				PRODUCT_NAME = projectMac;
 				SDKROOT = macosx;

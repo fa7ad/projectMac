@@ -1,5 +1,6 @@
 import AppKit
 import CoreVideo
+import Synchronization
 import os
 
 final class ProjectMGLView: NSOpenGLView {
@@ -20,6 +21,17 @@ final class ProjectMGLView: NSOpenGLView {
     private var lastFPSSampleTime = CFAbsoluteTimeGetCurrent()
     private var peakSinceLastSample: Float = 0
 
+    // CVDisplayLink thread only. Assumes ~48kHz; the tap's actual rate varies by source
+    // app, but beat detection doesn't need sample accuracy.
+    private let beatDetector = BeatDetector(sampleRate: 48000)
+
+    // Widened from 8 so k-means (DominantColor) has enough texels to resolve clusters.
+    private let colorSampleSize: GLsizei = 32
+    // Offscreen target `sampleAverageFramebufferColor` blits the whole frame down into,
+    // so the average represents the entire scene rather than one small patch of it.
+    private var sceneSampleFramebuffer: GLuint = 0
+    private var sceneSampleRenderbuffer: GLuint = 0
+
     static func makePixelFormat() -> NSOpenGLPixelFormat {
         let attrs: [NSOpenGLPixelFormatAttribute] = [
             UInt32(NSOpenGLPFAOpenGLProfile), UInt32(NSOpenGLProfileVersion3_2Core),
@@ -37,6 +49,7 @@ final class ProjectMGLView: NSOpenGLView {
         wantsBestResolutionOpenGLSurface = true
         openGLContext?.makeCurrentContext()
 
+        setupSceneSampleTarget()
         pm = projectm_create()
         updateWindowSize()
         if let pm, let ctx = openGLContext {
@@ -84,7 +97,13 @@ final class ProjectMGLView: NSOpenGLView {
         guard let ctx = openGLContext, let pm else { return }
         ctx.lock()
         ctx.makeCurrentContext()
-        coordinator.audioFeed.drainInto(pm: pm)
+        let broadcastEnabled = coordinator.sceneStreamBroadcaster.isEnabled.load(ordering: .relaxed)
+        var pcmCopy: [Float]?
+        coordinator.audioFeed.drainInto(pm: pm) { [weak self] samples in
+            guard let self, broadcastEnabled else { return }
+            _ = self.beatDetector.push(samples)
+            pcmCopy = Array(samples)
+        }
         peakSinceLastSample = max(peakSinceLastSample, coordinator.audioFeed.consumePeakLevel())
         if let fps = sampleFPS() {
             let stats = coordinator.renderStats
@@ -102,8 +121,53 @@ final class ProjectMGLView: NSOpenGLView {
             }
         }
         projectm_opengl_render_frame(pm)
+        if broadcastEnabled {
+            let pixels = readFramebufferPixels()
+            coordinator.sceneReducer.processFrame(
+                pixels: pixels,
+                gridSize: Int(colorSampleSize),
+                audioBPM: beatDetector.currentBPM,
+                audioPhase: beatDetector.phase,
+                pcm: pcmCopy
+            )
+        }
         ctx.flushBuffer()
         ctx.unlock()
+    }
+
+    /// Allocates the fixed-size offscreen target `readFramebufferPixels` blits into.
+    /// Sized once — `glBlitFramebuffer` rescales into it regardless of source size.
+    private func setupSceneSampleTarget() {
+        glGenRenderbuffers(1, &sceneSampleRenderbuffer)
+        glBindRenderbuffer(GLenum(GL_RENDERBUFFER), sceneSampleRenderbuffer)
+        glRenderbufferStorage(GLenum(GL_RENDERBUFFER), GLenum(GL_RGBA8), colorSampleSize, colorSampleSize)
+
+        glGenFramebuffers(1, &sceneSampleFramebuffer)
+        glBindFramebuffer(GLenum(GL_FRAMEBUFFER), sceneSampleFramebuffer)
+        glFramebufferRenderbuffer(GLenum(GL_FRAMEBUFFER), GLenum(GL_COLOR_ATTACHMENT0), GLenum(GL_RENDERBUFFER), sceneSampleRenderbuffer)
+        glBindFramebuffer(GLenum(GL_FRAMEBUFFER), 0)
+    }
+
+    /// Downsamples the whole frame into `sceneSampleFramebuffer` and reads it back as a
+    /// raw RGBA8 texel array. The one GL-bound step that can't move off the render
+    /// thread; must run with the GL context current, before flushBuffer/unlock.
+    private func readFramebufferPixels() -> [UInt8] {
+        let backing = convertToBacking(bounds)
+
+        glBindFramebuffer(GLenum(GL_READ_FRAMEBUFFER), 0)
+        glBindFramebuffer(GLenum(GL_DRAW_FRAMEBUFFER), sceneSampleFramebuffer)
+        glBlitFramebuffer(
+            0, 0, GLint(backing.width), GLint(backing.height),
+            0, 0, colorSampleSize, colorSampleSize,
+            GLbitfield(GL_COLOR_BUFFER_BIT), GLenum(GL_LINEAR)
+        )
+
+        var pixels = [UInt8](repeating: 0, count: Int(colorSampleSize * colorSampleSize) * 4)
+        glBindFramebuffer(GLenum(GL_READ_FRAMEBUFFER), sceneSampleFramebuffer)
+        glReadPixels(0, 0, colorSampleSize, colorSampleSize, GLenum(GL_RGBA), GLenum(GL_UNSIGNED_BYTE), &pixels)
+        glBindFramebuffer(GLenum(GL_FRAMEBUFFER), 0)
+
+        return pixels
     }
 
     private func sampleFPS() -> Int? {

@@ -16,6 +16,9 @@ struct AppIdentity {
     let name: String
     let bundleID: String?
     let icon: NSImage?
+    /// Whether the app runs with a normal Dock presence, rather than as a menu-bar-only
+    /// or background helper. Lets callers rank media apps above audio utilities.
+    let isRegularApp: Bool
     /// The family's parent process where it is running, otherwise the process resolved.
     /// Display and aggregate-device naming only; taps address process objects, not PIDs.
     let pid: pid_t
@@ -32,6 +35,7 @@ struct AppIdentity {
         let executable = path.map { URL(fileURLWithPath: $0).lastPathComponent }
 
         bundleID = rootBundleID ?? own?.bundleIdentifier
+        isRegularApp = (parent ?? own)?.activationPolicy == .regular
         self.pid = parent?.processIdentifier ?? pid
         key = rootBundleID ?? rootAppURL?.path ?? own?.bundleIdentifier ?? path ?? "pid-\(pid)"
         name = parent?.localizedName

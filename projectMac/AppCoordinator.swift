@@ -11,6 +11,10 @@ final class AppCoordinator {
     let audioAppMonitor = AudioAppMonitor()
     let audioFeed = AudioFeed()
     let renderStats = RenderStats()
+    let sceneStreamBroadcaster = SceneStreamBroadcaster()
+    /// `lazy` so its init can reference `sceneStreamBroadcaster` above; `@ObservationIgnored`
+    /// since `@Observable` can't generate tracked-storage accessors for a `lazy` property.
+    @ObservationIgnored private(set) lazy var sceneReducer = SceneReducer(broadcaster: sceneStreamBroadcaster, renderStats: renderStats)
 
     private(set) var currentTappedAppID: String?
     private var tapController: ProcessTapController?
@@ -36,6 +40,7 @@ final class AppCoordinator {
         presetManager.onPresetChanged = { [weak self] name in
             self?.renderStats.presetName = name
             self?.renderStats.isLoadingFirstPreset = false
+            self?.sceneStreamBroadcaster.sendPresetChanged(name: name)
         }
     }
 
@@ -50,6 +55,11 @@ final class AppCoordinator {
             height: defaults.integer(forKey: AppSettingsKeys.meshSizeY)
         )
         presetManager.setShuffle(defaults.bool(forKey: AppSettingsKeys.shufflePresets))
+        let broadcastEnabled = defaults.bool(forKey: AppSettingsKeys.broadcastSceneStream)
+        sceneStreamBroadcaster.isEnabled.store(broadcastEnabled, ordering: .relaxed)
+        if !broadcastEnabled {
+            renderStats.sceneStream = nil
+        }
     }
 
     func start() {
@@ -75,6 +85,7 @@ final class AppCoordinator {
         retapWorkItem = nil
         tapController?.invalidate()
         tapController = nil
+        sceneStreamBroadcaster.stop()
     }
 
     private func reconcileTap(with apps: [AudioApp]) {

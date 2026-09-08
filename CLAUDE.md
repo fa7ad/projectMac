@@ -156,6 +156,60 @@ must only happen on the main thread.
   (`core.h`, `render_opengl.h`, `audio.h`, `parameters.h`, `playlist.h`) plus
   `OpenGL/gl3.h`. This is how Swift calls libprojectM directly with no Obj-C++ shim.
 
+- **`SceneStream/`** (`BeatDetector.swift`, `VisualOnsetDetector.swift`,
+  `AudioBandAnalyzer.swift`, `DominantColor.swift`, `SceneReducer.swift`,
+  `SceneStreamBroadcaster.swift`): streams tempo/phase (audio- and visual-derived),
+  dominant-color, and frequency-band state as OSC messages over a loopback UDP socket
+  (`127.0.0.1:9000` by default) for any OSC-aware process to consume — e.g. Chataigne
+  bridging to smart-home lighting, TouchDesigner, or another music-reactive consumer.
+  Deliberately a generic OSC source with no consumer-specific logic: it broadcasts both
+  audio- and visual-derived rate estimates side by side (a preset's on-screen cut rate
+  often doesn't track the song's BPM) and lets each consumer arbitrate which to trust.
+  Toggled by the "Broadcast scene stream" setting (off by default). Addresses, each its
+  own datagram:
+  `/projectmac/tempo/bpm`, `/projectmac/tempo/phase` (audio-side, from `BeatDetector`);
+  `/projectmac/visual/bpm`, `/projectmac/visual/phase`, `/projectmac/visual/onset` (bang,
+  visual-side, from `VisualOnsetDetector`); `/projectmac/scene/vibrant`,
+  `/projectmac/scene/muted`, `/projectmac/scene/average` (h/s/v floats, 0.0-1.0, hue as a
+  fraction of the circle — from `DominantColor`'s k-means); `/projectmac/scene/brightness`
+  (Rec. 709 luma, 0.0-1.0 — not the same as HSV's `v`); `/projectmac/audio/bass`,
+  `/projectmac/audio/mid`, `/projectmac/audio/treble` (FFT band energy, 0.0-1.0, from
+  `AudioBandAnalyzer`); `/projectmac/preset/changed` (bang) + `/projectmac/preset/name`
+  (string), forwarded from `PresetManager.onPresetChanged` on every preset switch. Raw RGB
+  is not on the wire at all — HSV is what real downstream lighting protocols (DMX, Hue)
+  want directly.
+  - `BeatDetector`: a causal energy-threshold onset detector, fed the same samples
+    `AudioFeed.drainInto` hands to projectM (via its `tap` closure param), called
+    once per frame on the CVDisplayLink thread — the one detector that stays there,
+    since it's proven-cheap and already working. Tracks a rolling BPM estimate and a
+    `phase` (0.0-1.0 position within the current beat interval) from detected onsets.
+  - `ProjectMGLView.readFramebufferPixels()` is the only GL-bound step
+    (`glBlitFramebuffer` + `glReadPixels` into the 32×32 `sceneSampleFramebuffer`) and
+    is all that still runs on the CVDisplayLink thread; everything downstream of that
+    raw pixel array — black-level exclusion, k-means, frame-diff, phase, FFT band
+    split, OSC send — runs on `SceneReducer`'s own dedicated serial background queue,
+    off the render thread entirely. `renderFrame` snapshots `beatDetector`'s
+    BPM/phase into local values and hands the pixel array (plus a copy of this
+    frame's PCM block, for the FFT) to `SceneReducer.processFrame`, which drops
+    (rather than backlogs) a frame's work if the queue is still busy with the
+    previous one, via an `Atomic<Bool>` in-flight flag — the same "drop rather than
+    block" policy `AudioFeed` uses for ring-buffer overflow.
+  - `VisualOnsetDetector`: same detection shape as `BeatDetector` (rolling
+    mean+stddev threshold, refractory period, rolling-median BPM/phase) but reduced
+    from a per-frame mean-RGB frame-diff energy scalar instead of streaming audio
+    blocks — kept as its own class since the two inputs are structurally different.
+    Lives entirely on `SceneReducer`'s queue.
+  - `DominantColor`: k-means (k=3) over the readback texels, RGB space, after
+    discarding near-black texels (Ambilight/Hyperion-style black-level exclusion so a
+    mostly-black MilkDrop frame doesn't waste clusters on the background). `vibrant`
+    maximizes population×saturation (avoids returning something drab); `muted` is the
+    largest surviving cluster by population. HSV conversion happens once, after
+    selection, not per texel. The flat average (`average`) is also computed here and
+    converted to HSV, replacing the old raw-RGB reduction.
+  - `AudioBandAnalyzer`: bass/mid/treble via `vDSP_fft_zrip` (Accelerate — linked as
+    its own framework dependency in `project.yml`) over a Hann-windowed downmix of the
+    same PCM `BeatDetector` sees; runs entirely on `SceneReducer`'s queue.
+
 ### Signing & entitlements
 
 Process taps require App Sandbox off and the

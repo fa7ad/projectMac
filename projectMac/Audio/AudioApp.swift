@@ -8,6 +8,10 @@ struct AudioApp: Identifiable, Equatable {
     let name: String
     let bundleID: String?
     let icon: NSImage?
+    /// Whether the app has a normal Dock presence (`NSRunningApplication.activationPolicy
+    /// == .regular`), as opposed to a menu-bar-only or background helper. Used to rank
+    /// media apps ahead of audio utilities when picking a default tap target.
+    let isRegularApp: Bool
     /// Representative PID, for display and the aggregate device name only.
     let pid: pid_t
     /// Every process object in the family, passed to

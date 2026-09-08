@@ -8,6 +8,7 @@ enum AppSettingsKeys {
     static let meshSizeX = "meshSizeX"
     static let meshSizeY = "meshSizeY"
     static let shufflePresets = "shufflePresets"
+    static let broadcastSceneStream = "broadcastSceneStream"
 
     static var defaults: [String: Any] {[
         beatSensitivity: 1.0,
@@ -15,5 +16,6 @@ enum AppSettingsKeys {
         meshSizeX: 96,
         meshSizeY: 72,
         shufflePresets: false,
+        broadcastSceneStream: false,
     ]}
 }

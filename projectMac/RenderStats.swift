@@ -19,4 +19,7 @@ final class RenderStats {
     /// Stereo frames queued in the ring buffer, and its capacity.
     var audioBacklogFrames: Int = 0
     var audioCapacityFrames: Int = 0
+    /// Latest scene-stream reduction. `nil` when broadcasting is off, so the overlay
+    /// section disappears instead of freezing on a stale reading.
+    var sceneStream: SceneUpdate?
 }

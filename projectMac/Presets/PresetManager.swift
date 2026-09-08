@@ -42,7 +42,8 @@ final class PresetManager {
                 projectm_playlist_play_next(playlist, true)
             }
         }
-        reportCurrentPreset()
+        // No explicit reportCurrentPreset() here: the switched-event callback above
+        // already fires for this initial load; an extra call double-reported it.
     }
 
     /// Fires on *any* switch, including projectM's automatic ones (duration timeout, beat

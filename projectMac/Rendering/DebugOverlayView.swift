@@ -26,6 +26,9 @@ struct DebugOverlayView: View {
                 Text("Buffer overflows: \(stats.audioOverflowCount)")
                     .foregroundStyle(.orange)
             }
+            if let scene = stats.sceneStream {
+                sceneStreamSection(scene)
+            }
         }
         .font(.system(.caption, design: .monospaced))
         .foregroundStyle(.white)
@@ -33,5 +36,29 @@ struct DebugOverlayView: View {
         .background(.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 6))
         .padding(12)
         .allowsHitTesting(false)
+    }
+
+    /// Audio- vs. visual-derived tempo, plus the vibrant/muted/average swatches.
+    @ViewBuilder
+    private func sceneStreamSection(_ scene: SceneUpdate) -> some View {
+        Text(String(format: "Audio %.0fbpm (φ%.2f)  Visual %.0fbpm (φ%.2f)",
+                     scene.audioBPM, scene.audioPhase, scene.visualBPM, scene.visualPhase))
+            .foregroundStyle(scene.visualOnset ? .yellow : .white)
+        HStack(spacing: 8) {
+            swatch("Vibrant", scene.vibrant)
+            swatch("Muted", scene.muted)
+            swatch("Avg", scene.average)
+        }
+        Text(String(format: "Bass %.2f  Mid %.2f  Treble %.2f", scene.bass, scene.mid, scene.treble))
+    }
+
+    private func swatch(_ label: String, _ hsv: HSV) -> some View {
+        HStack(spacing: 3) {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(Color(hue: Double(hsv.h), saturation: Double(hsv.s), brightness: Double(hsv.v)))
+                .frame(width: 10, height: 10)
+                .overlay(RoundedRectangle(cornerRadius: 2).stroke(.white.opacity(0.4), lineWidth: 0.5))
+            Text(label)
+        }
     }
 }

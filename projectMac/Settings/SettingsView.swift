@@ -8,6 +8,7 @@ struct SettingsView: View {
     @AppStorage(AppSettingsKeys.meshSizeX) private var meshSizeX: Int = 96
     @AppStorage(AppSettingsKeys.meshSizeY) private var meshSizeY: Int = 72
     @AppStorage(AppSettingsKeys.shufflePresets) private var shufflePresets: Bool = false
+    @AppStorage(AppSettingsKeys.broadcastSceneStream) private var broadcastSceneStream: Bool = false
 
     private var meshQualityBinding: Binding<Int> {
         Binding(
@@ -47,6 +48,9 @@ struct SettingsView: View {
                         value: $presetDuration, in: 5...300, step: 5)
                 Toggle("Shuffle", isOn: $shufflePresets)
             }
+            Section("Scene Stream") {
+                Toggle("Broadcast scene stream", isOn: $broadcastSceneStream)
+            }
         }
         .formStyle(.grouped)
         .padding()
@@ -56,6 +60,7 @@ struct SettingsView: View {
         .onChange(of: presetDuration) { applySettings() }
         .onChange(of: meshSizeX) { applySettings() }
         .onChange(of: shufflePresets) { applySettings() }
+        .onChange(of: broadcastSceneStream) { applySettings() }
     }
 
     private func applySettings() {

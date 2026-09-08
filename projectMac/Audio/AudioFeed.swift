@@ -92,7 +92,8 @@ final class AudioFeed: @unchecked Sendable {
     var capacityFrames: Int { capacity / 2 }
 
     /// Render thread, once per frame. Drains up to `projectm_pcm_get_max_samples()`.
-    func drainInto(pm: projectm_handle) {
+    /// `tap`, if provided, sees the same samples before projectM does.
+    func drainInto(pm: projectm_handle, tap: ((UnsafeBufferPointer<Float>) -> Void)? = nil) {
         let maxFrames = Int(projectm_pcm_get_max_samples())
         let maxSamples = min(maxFrames * 2, capacity)
 
@@ -106,6 +107,9 @@ final class AudioFeed: @unchecked Sendable {
         }
         readIndex.store(read + count, ordering: .releasing)
 
+        if let tap {
+            tap(UnsafeBufferPointer(start: scratch, count: count))
+        }
         projectm_pcm_add_float(pm, scratch, UInt32(count / 2), PROJECTM_STEREO)
     }
 }

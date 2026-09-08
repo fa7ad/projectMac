@@ -32,6 +32,10 @@ struct projectMacApp: App {
         }
         .defaultSize(width: 1920, height: 1080)
         .commands {
+            CommandGroup(replacing: .appInfo) {
+                Button("About projectMac") { showAboutPanel() }
+            }
+
             CommandMenu("Presets") {
                 Button("Next Preset") { coordinator.nextPreset() }
                     .keyboardShortcut(.rightArrow, modifiers: .command)
@@ -66,5 +70,30 @@ struct projectMacApp: App {
             SettingsView()
                 .environment(coordinator)
         }
+    }
+
+    /// Replaces the default About panel's credits with a description, copyright, and a
+    /// link to the repo.
+    private func showAboutPanel() {
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .center
+
+        let credits = NSMutableAttributedString(
+            string: "A music visualizer, powered by projectM.\n\nCopyright \u{00A9} 2026 Fahad Hossain\n",
+            attributes: [
+                .font: NSFont.systemFont(ofSize: 11),
+                .paragraphStyle: paragraphStyle,
+            ]
+        )
+        credits.append(NSAttributedString(
+            string: "github.com/fa7ad/projectMac",
+            attributes: [
+                .font: NSFont.systemFont(ofSize: 11),
+                .paragraphStyle: paragraphStyle,
+                .link: URL(string: "https://github.com/fa7ad/projectMac")!,
+            ]
+        ))
+
+        NSApplication.shared.orderFrontStandardAboutPanel(options: [.credits: credits])
     }
 }

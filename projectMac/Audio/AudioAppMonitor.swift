@@ -106,11 +106,17 @@ final class AudioAppMonitor {
                     name: family.identity.name,
                     bundleID: family.identity.bundleID,
                     icon: family.identity.icon,
+                    isRegularApp: family.identity.isRegularApp,
                     pid: family.identity.pid,
                     processObjectIDs: family.processObjectIDs.sorted()
                 )
             }
-            .sorted { $0.name < $1.name }
+            // Regular (Dock-visible) apps first, since those are almost always what the
+            // user means to visualize; menu-bar/background audio utilities sort after,
+            // both groups alphabetical within themselves.
+            .sorted {
+                $0.isRegularApp != $1.isRegularApp ? $0.isRegularApp : $0.name < $1.name
+            }
 
         guard apps != audioApps else { return }
         audioApps = apps

@@ -58,7 +58,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.projectmac.app
         PRODUCT_NAME: projectMac
-        MARKETING_VERSION: "0.3.0"
+        MARKETING_VERSION: "0.4.0"
         CURRENT_PROJECT_VERSION: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     configFiles:
@@ -69,3 +69,5 @@ targets:
       - sdk: CoreAudio.framework
       - sdk: AudioToolbox.framework
       - sdk: AVFoundation.framework
+      - sdk: Network.framework
+      - sdk: Accelerate.framework

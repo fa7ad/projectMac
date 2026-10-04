@@ -21,8 +21,9 @@ final class AudioFeed: @unchecked Sendable {
     private let peakLevelBits = Atomic<UInt32>(0)
     private let overflowCount = Atomic<Int>(0)
 
-    /// `capacityFrames` stereo frames (2 floats/frame). Default ~93ms at 44.1kHz.
-    init(capacityFrames: Int = 4096) {
+    /// `capacityFrames` stereo frames (2 floats/frame). Default ~370ms at 44.1kHz, so a
+    /// render hitch (a preset load) doesn't drop audio.
+    init(capacityFrames: Int = 16384) {
         capacity = capacityFrames * 2
         buffer = .allocate(capacity: capacity)
         buffer.initialize(repeating: 0, count: capacity)
@@ -91,17 +92,20 @@ final class AudioFeed: @unchecked Sendable {
     }
     var capacityFrames: Int { capacity / 2 }
 
-    /// Render thread, once per frame. Drains up to `projectm_pcm_get_max_samples()`.
-    /// `tap`, if provided, sees the same samples before projectM does.
+    /// Render thread, once per frame. Drains everything queued. `tap`, if provided, sees
+    /// the same samples before projectM does.
+    ///
+    /// Not capped at `projectm_pcm_get_max_samples()` (480 frames): at 60fps that's
+    /// 28.8k frames/s against a 44.1k/48k tap, so the buffer sat full and ~35% of the
+    /// audio was dropped in chunks — projectM didn't notice, but the beat detector's
+    /// tempo turned to noise. projectM keeps only its last 576 samples, so handing it
+    /// more is harmless (and means it always sees the newest audio).
     func drainInto(pm: projectm_handle, tap: ((UnsafeBufferPointer<Float>) -> Void)? = nil) {
-        let maxFrames = Int(projectm_pcm_get_max_samples())
-        let maxSamples = min(maxFrames * 2, capacity)
-
         let read = readIndex.load(ordering: .relaxed)
         let available = writeIndex.load(ordering: .acquiring) - read
         guard available > 0 else { return }
 
-        let count = min(available, maxSamples)
+        let count = min(available, capacity)
         for i in 0..<count {
             scratch[i] = buffer[(read + i) % capacity]
         }

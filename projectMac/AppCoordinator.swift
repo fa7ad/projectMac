@@ -151,6 +151,7 @@ final class AppCoordinator {
             tapController = controller
             currentTappedAppID = app.id
             renderStats.tappedAppName = app.name
+            renderStats.tapSampleRate = audioFeed.sampleRate
             renderStats.audioError = nil
         } catch {
             clearTap()
@@ -163,6 +164,7 @@ final class AppCoordinator {
         tapController = nil
         currentTappedAppID = nil
         renderStats.tappedAppName = nil
+        renderStats.tapSampleRate = nil
     }
 
     private func reportAudioError(_ message: String) {

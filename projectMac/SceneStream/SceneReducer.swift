@@ -11,7 +11,7 @@ final class SceneReducer: @unchecked Sendable {
     private let renderStats: RenderStats
 
     private let visualOnsetDetector = VisualOnsetDetector()
-    private let bandAnalyzer = AudioBandAnalyzer()
+    private var bandAnalyzer: AudioBandAnalyzer?
     private var previousPixels: [UInt8]?
 
     /// Drops this frame's work if the queue hasn't finished the last one, rather than
@@ -25,18 +25,18 @@ final class SceneReducer: @unchecked Sendable {
 
     /// Called once per frame from the CVDisplayLink thread; `pixels`/`pcm` are already
     /// copied value-type snapshots, so this doesn't reach back into render-thread state.
-    func processFrame(pixels: [UInt8], gridSize: Int, audioBPM: Double, audioPhase: Double, pcm: [Float]?) {
+    func processFrame(pixels: [UInt8], gridSize: Int, audioBPM: Double, audioPhase: Double, pcm: [Float]?, sampleRate: Double) {
         guard isProcessing.compareExchange(expected: false, desired: true, ordering: .relaxed).exchanged else {
             return
         }
         queue.async { [weak self] in
             guard let self else { return }
-            self.reduce(pixels: pixels, gridSize: gridSize, audioBPM: audioBPM, audioPhase: audioPhase, pcm: pcm)
+            self.reduce(pixels: pixels, gridSize: gridSize, audioBPM: audioBPM, audioPhase: audioPhase, pcm: pcm, sampleRate: sampleRate)
             self.isProcessing.store(false, ordering: .relaxed)
         }
     }
 
-    private func reduce(pixels: [UInt8], gridSize: Int, audioBPM: Double, audioPhase: Double, pcm: [Float]?) {
+    private func reduce(pixels: [UInt8], gridSize: Int, audioBPM: Double, audioPhase: Double, pcm: [Float]?, sampleRate: Double) {
         let (vibrantRGB, mutedRGB) = DominantColor.vibrantAndMuted(pixels: pixels, gridSize: gridSize)
         let averageRGB = DominantColor.flatAverage(pixels: pixels, gridSize: gridSize)
         let brightness = DominantColor.luma(averageRGB)
@@ -45,8 +45,11 @@ final class SceneReducer: @unchecked Sendable {
         previousPixels = pixels
         let onset = visualOnsetDetector.push(energy)
 
+        if bandAnalyzer?.sampleRate != sampleRate {
+            bandAnalyzer = AudioBandAnalyzer(sampleRate: sampleRate) // a new tap can change the rate
+        }
         if let pcm {
-            bandAnalyzer.push(interleavedStereo: pcm)
+            bandAnalyzer?.push(interleavedStereo: pcm)
         }
 
         let update = SceneUpdate(
@@ -59,20 +62,20 @@ final class SceneReducer: @unchecked Sendable {
             vibrant: DominantColor.rgbToHSV(vibrantRGB),
             muted: DominantColor.rgbToHSV(mutedRGB),
             average: DominantColor.rgbToHSV(averageRGB),
-            bass: bandAnalyzer.bass,
-            mid: bandAnalyzer.mid,
-            treble: bandAnalyzer.treble
+            bass: bandAnalyzer?.bass ?? 0,
+            mid: bandAnalyzer?.mid ?? 0,
+            treble: bandAnalyzer?.treble ?? 0
         )
         broadcaster.sendUpdate(update)
 
         let renderStats = renderStats
+        let sendError = broadcaster.lastError.withLock { $0 }
         DispatchQueue.main.async {
             renderStats.sceneStream = update
+            renderStats.sceneStreamError = sendError
         }
-        let sendError = broadcaster.lastError.withLock { $0 }
     }
 
-            renderStats.sceneStreamError = sendError
     /// Mean RGB (not luma) absolute diff — luma washes out a red<->cyan style flip that's
     /// perceptually huge but nets to almost no luma change.
     private func frameDiffEnergy(pixels: [UInt8], gridSize: Int) -> Double {

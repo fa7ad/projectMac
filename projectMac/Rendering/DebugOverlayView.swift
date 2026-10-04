@@ -12,7 +12,9 @@ struct DebugOverlayView: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
-            Text(stats.tappedAppName.map { "Tapping: \($0)" } ?? "No audio source")
+            Text(stats.tappedAppName.map { name in
+                "Tapping: \(name)" + (stats.tapSampleRate.map { String(format: " · %.1f kHz", $0 / 1000) } ?? "")
+            } ?? "No audio source")
             if let audioError = stats.audioError {
                 Text(audioError)
                     .foregroundStyle(.red)
@@ -28,12 +30,12 @@ struct DebugOverlayView: View {
             }
             if let scene = stats.sceneStream {
                 sceneStreamSection(scene)
-            }
-        }
                 Text(stats.sceneStreamError ?? "OSC: sending")
                     .foregroundStyle(stats.sceneStreamError == nil ? .green : .red)
                     .lineLimit(2)
                     .truncationMode(.middle)
+            }
+        }
         .font(.system(.caption, design: .monospaced))
         .foregroundStyle(.white)
         .padding(8)

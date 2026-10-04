@@ -20,6 +20,15 @@ final class AudioFeed: @unchecked Sendable {
     // `AtomicRepresentable`, hence the bit pattern.
     private let peakLevelBits = Atomic<UInt32>(0)
     private let overflowCount = Atomic<Int>(0)
+    private let sampleRateBits = Atomic<UInt64>(48000.0.bitPattern) // placeholder until a tap activates
+
+    /// The active tap's sample rate (the tapped app's own stream format, e.g. 44.1kHz
+    /// for Spotify even on a 48kHz device). Set on tap activation, read by the render
+    /// thread's beat detector, which times tempo by counting samples.
+    var sampleRate: Double {
+        get { Double(bitPattern: sampleRateBits.load(ordering: .relaxed)) }
+        set { sampleRateBits.store(newValue.bitPattern, ordering: .relaxed) }
+    }
 
     /// `capacityFrames` stereo frames (2 floats/frame). Default ~370ms at 44.1kHz, so a
     /// render hitch (a preset load) doesn't drop audio.

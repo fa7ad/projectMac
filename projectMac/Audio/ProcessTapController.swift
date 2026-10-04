@@ -162,6 +162,7 @@ final class ProcessTapController {
             ])
         }
         logger.debug("Tap format: 2ch float32 \(Int(asbd.mSampleRate), privacy: .public)Hz")
+        audioFeed.sampleRate = asbd.mSampleRate
     }
 
     /// Runs on the main thread once, a second after activation: a tap that is running but

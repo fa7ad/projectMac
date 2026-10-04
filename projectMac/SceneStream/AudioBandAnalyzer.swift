@@ -9,7 +9,7 @@ final class AudioBandAnalyzer {
     private let windowSize: Int
     private let log2n: vDSP_Length
     private let fftSetup: FFTSetup
-    private let sampleRate: Double
+    let sampleRate: Double
     private let hannWindow: [Float]
 
     private var accum: [Float] = []
@@ -18,8 +18,9 @@ final class AudioBandAnalyzer {
     private(set) var mid: Float = 0
     private(set) var treble: Float = 0
 
-    /// `windowSize` 2048 is ~46ms at the assumed 48kHz, matching `BeatDetector`'s block.
-    init(sampleRate: Double = 48000, windowSize: Int = 2048) {
+    /// `sampleRate` is the tap's real rate (`AudioFeed.sampleRate`): band edges are in Hz.
+    /// `windowSize` 2048 is ~43-46ms at 44.1-48kHz.
+    init(sampleRate: Double, windowSize: Int = 2048) {
         self.sampleRate = sampleRate
         self.windowSize = windowSize
         self.log2n = vDSP_Length(log2(Double(windowSize)))

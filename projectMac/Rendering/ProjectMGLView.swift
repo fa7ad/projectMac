@@ -23,7 +23,7 @@ final class ProjectMGLView: NSOpenGLView {
 
     // CVDisplayLink thread only. Assumes ~48kHz; the tap's actual rate varies by source
     // app, but beat detection doesn't need sample accuracy.
-    private let beatDetector = BeatDetector(sampleRate: 48000)
+    private lazy var beatDetector = BeatDetector(sampleRate: coordinator.audioFeed.sampleRate)
 
     // Widened from 8 so k-means (DominantColor) has enough texels to resolve clusters.
     private let colorSampleSize: GLsizei = 32
@@ -99,6 +99,10 @@ final class ProjectMGLView: NSOpenGLView {
         ctx.makeCurrentContext()
         let broadcastEnabled = coordinator.sceneStreamBroadcaster.isEnabled.load(ordering: .relaxed)
         var pcmCopy: [Float]?
+        let sampleRate = coordinator.audioFeed.sampleRate
+        if sampleRate != beatDetector.sampleRate {
+            beatDetector = BeatDetector(sampleRate: sampleRate) // tempo is timed in samples
+        }
         coordinator.audioFeed.drainInto(pm: pm) { [weak self] samples in
             guard let self, broadcastEnabled else { return }
             _ = self.beatDetector.push(samples)
@@ -128,7 +132,8 @@ final class ProjectMGLView: NSOpenGLView {
                 gridSize: Int(colorSampleSize),
                 audioBPM: beatDetector.currentBPM,
                 audioPhase: beatDetector.phase,
-                pcm: pcmCopy
+                pcm: pcmCopy,
+                sampleRate: sampleRate
             )
         }
         ctx.flushBuffer()

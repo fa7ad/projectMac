@@ -10,8 +10,10 @@
 		0364301F756B0FA4F6734001 /* AppCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7968EDB2F208EA5D68D2F53 /* AppCoordinator.swift */; };
 		07F1340F1A9B63740D6B0D28 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E0EF34A472A572AAA4B7C0C2 /* AudioToolbox.framework */; };
 		0ACE38119D2515C1C59EAFFE /* RenderStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BC751495B7B217BB5885958 /* RenderStats.swift */; };
+		1057D655B737B8DA711760FF /* BpmDetection+Flux.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAD4DB49D3EC4D5A8BC8AB19 /* BpmDetection+Flux.swift */; };
 		2176C63DE83FF11C774324D3 /* LoadingOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C940D4086322443387255EB7 /* LoadingOverlayView.swift */; };
 		230E8AD0C2CCBB60F3CA731B /* PresetManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDEBE2F01E5F07A0F5C7E18F /* PresetManager.swift */; };
+		23DF38D776DB85AC2965C999 /* LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 3152EFB16F06B9B5BB716208 /* LICENSE.txt */; };
 		2C9C325739CCF0FA6D2FFA89 /* AudioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F2B9DD1BC759D30B0B9BBFB /* AudioApp.swift */; };
 		3CCC72A0790913FB3196FF4A /* SceneStreamBroadcaster.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18897FE143A02E88846D5A2C /* SceneStreamBroadcaster.swift */; };
 		3DE2C4C912ED61FD5722AA03 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3AB3F22010C317AB17582469 /* Assets.xcassets */; };
@@ -20,42 +22,60 @@
 		58ADFD0B2464A3F66BF41004 /* ProjectMViewRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B46DA5167DA290CB71BBC15 /* ProjectMViewRepresentable.swift */; };
 		5D7B5C7235860EA14C7C19EE /* SceneReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1285155A06E8113348983C75 /* SceneReducer.swift */; };
 		624780E650A39E063138FCAB /* DebugOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEC64E855BEE28F22E040271 /* DebugOverlayView.swift */; };
+		64D64C0A28F05E6927B45963 /* BpmDetection+Tuning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 085C6BAC7069D606D7818332 /* BpmDetection+Tuning.swift */; };
 		6AE11A4F26968C7E10C7C9EE /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AFB7C76485D87754950E3DFD /* CoreAudio.framework */; };
 		788329D225681317B1F78C76 /* BeatDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAF9D0BB5268928FE1A815AE /* BeatDetector.swift */; };
 		7C718B2DBEDDE6070ABFF9B9 /* AudioBandAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 939889107B3EA605D89832A6 /* AudioBandAnalyzer.swift */; };
 		7D7EABD0BB04677C0F44C226 /* VisualOnsetDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7020A24DDB7111AF01557CEC /* VisualOnsetDetector.swift */; };
 		7E2C75549AE0E76D7DA9DA6E /* Network.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CA8A2682D0D3F7882B711837 /* Network.framework */; };
 		81E7F1428DED46250BD502D6 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5A9B33401E546EFA6347A6D8 /* AVFoundation.framework */; };
+		82DB0D2CE0C71BDDB7D5176C /* AnalysisQuality.swift in Sources */ = {isa = PBXBuildFile; fileRef = A364BE4EC8FD3B2C94F2CE82 /* AnalysisQuality.swift */; };
 		85D73E2A449731E122183F07 /* AppSettingsKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7586C03F8E60484DBB54590 /* AppSettingsKeys.swift */; };
 		8742EEE0CD4BE679C973797C /* CoreAudioExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D97E7379DC1E39A879EFCD /* CoreAudioExtensions.swift */; };
+		8C17F3DEA66126C1F31E6572 /* AutocorrelationFFT.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44BFB286460976943993D2E4 /* AutocorrelationFFT.swift */; };
 		99709582C3F5C74A40808FFC /* projectMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAFB6E6B9D926A4DBC815C1A /* projectMacApp.swift */; };
 		9CA5FB9477567EDF98BF6BD7 /* AudioFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C50285D4AFC57F4FC97846D /* AudioFeed.swift */; };
+		9D2D9FA7A212D47D77AAF767 /* BpmDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F7CA96685D3634C10E4D2FD /* BpmDetection.swift */; };
 		A8F6F494CBE2B5EBC43177B3 /* AudioAppMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB0ED0F294D60A71CCA433D /* AudioAppMonitor.swift */; };
 		B56FCF1D57B56A9BCA83B11D /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBE1244B292E31110D11ECF0 /* SettingsView.swift */; };
 		BE64AB2B960C501A40A87D3B /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D046BDAADB25FF1DDD2263B3 /* OpenGL.framework */; };
+		C02C091A429C5908B9B7FCE5 /* BpmDetection+Estimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFBA9F904AD2E8025ADCF297 /* BpmDetection+Estimation.swift */; };
+		C0E3E920C78B1048E8C7B288 /* ConfidenceLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D089D810100847F45FFB3B2 /* ConfidenceLevel.swift */; };
 		C3A3EE0449703A722CF6B125 /* DominantColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02D4743C31468CF32E5BF67D /* DominantColor.swift */; };
 		C41148EFF4BFE568CF2BB1CD /* ProjectMGLView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8678923C4766918FDA5E2909 /* ProjectMGLView.swift */; };
 		C4892C6EB0B0B26520D77C05 /* ProcessTapController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7291DF9CE47D314A3CE4ADA1 /* ProcessTapController.swift */; };
+		C825F0DCEFBF2937F764149F /* BpmDetectionOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 797457B9B39A919A8D352322 /* BpmDetectionOptions.swift */; };
+		CC945B35F6947B503B596A26 /* FourierFilterbank.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85176C961954F54AF11FBA3A /* FourierFilterbank.swift */; };
+		E9A2EBBBF60909487B2EB760 /* ACFCombFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C144A6AAD8646090830A8D1 /* ACFCombFilter.swift */; };
+		EE1CB4BFFC72DD4F43A987A1 /* BpmDetection+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2BB90199D4DA210739264D0 /* BpmDetection+Live.swift */; };
 		FC1F2EA4F65EB06426AFA962 /* TapResources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E5A55BF116FCEB40A59904A /* TapResources.swift */; };
 		FD0A36F04E22385288CE055B /* AudioErrorBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54BC0553F5639006BC125F2D /* AudioErrorBannerView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		02D4743C31468CF32E5BF67D /* DominantColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DominantColor.swift; sourceTree = "<group>"; };
+		085C6BAC7069D606D7818332 /* BpmDetection+Tuning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BpmDetection+Tuning.swift"; sourceTree = "<group>"; };
 		1285155A06E8113348983C75 /* SceneReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneReducer.swift; sourceTree = "<group>"; };
 		18897FE143A02E88846D5A2C /* SceneStreamBroadcaster.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneStreamBroadcaster.swift; sourceTree = "<group>"; };
+		1D089D810100847F45FFB3B2 /* ConfidenceLevel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfidenceLevel.swift; sourceTree = "<group>"; };
 		28D2B60387ECABB2F5434E53 /* AppIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIdentity.swift; sourceTree = "<group>"; };
 		2DA95975CE43223FEC0B5367 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
+		2F7CA96685D3634C10E4D2FD /* BpmDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BpmDetection.swift; sourceTree = "<group>"; };
+		3152EFB16F06B9B5BB716208 /* LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
 		352B1F03A05CF0AD0825F07A /* projectMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = projectMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3AB3F22010C317AB17582469 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		44BFB286460976943993D2E4 /* AutocorrelationFFT.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutocorrelationFFT.swift; sourceTree = "<group>"; };
 		4BB0ED0F294D60A71CCA433D /* AudioAppMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAppMonitor.swift; sourceTree = "<group>"; };
 		54BC0553F5639006BC125F2D /* AudioErrorBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioErrorBannerView.swift; sourceTree = "<group>"; };
 		5A9B33401E546EFA6347A6D8 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		5E127A08007AF2E6F6FAAAFA /* projectMac.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = projectMac.entitlements; sourceTree = "<group>"; };
+		6C144A6AAD8646090830A8D1 /* ACFCombFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ACFCombFilter.swift; sourceTree = "<group>"; };
 		6E5A55BF116FCEB40A59904A /* TapResources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapResources.swift; sourceTree = "<group>"; };
 		6F2B9DD1BC759D30B0B9BBFB /* AudioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioApp.swift; sourceTree = "<group>"; };
 		7020A24DDB7111AF01557CEC /* VisualOnsetDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualOnsetDetector.swift; sourceTree = "<group>"; };
 		7291DF9CE47D314A3CE4ADA1 /* ProcessTapController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessTapController.swift; sourceTree = "<group>"; };
+		797457B9B39A919A8D352322 /* BpmDetectionOptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BpmDetectionOptions.swift; sourceTree = "<group>"; };
+		85176C961954F54AF11FBA3A /* FourierFilterbank.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FourierFilterbank.swift; sourceTree = "<group>"; };
 		8678923C4766918FDA5E2909 /* ProjectMGLView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectMGLView.swift; sourceTree = "<group>"; };
 		8BC751495B7B217BB5885958 /* RenderStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenderStats.swift; sourceTree = "<group>"; };
 		939889107B3EA605D89832A6 /* AudioBandAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioBandAnalyzer.swift; sourceTree = "<group>"; };
@@ -63,13 +83,17 @@
 		9C2ECF1BF711F3A8585B07C4 /* projectm-bridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "projectm-bridge.h"; sourceTree = "<group>"; };
 		9C50285D4AFC57F4FC97846D /* AudioFeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioFeed.swift; sourceTree = "<group>"; };
 		A1D97E7379DC1E39A879EFCD /* CoreAudioExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreAudioExtensions.swift; sourceTree = "<group>"; };
+		A364BE4EC8FD3B2C94F2CE82 /* AnalysisQuality.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisQuality.swift; sourceTree = "<group>"; };
 		AFB7C76485D87754950E3DFD /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		B7586C03F8E60484DBB54590 /* AppSettingsKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettingsKeys.swift; sourceTree = "<group>"; };
 		BAF9D0BB5268928FE1A815AE /* BeatDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeatDetector.swift; sourceTree = "<group>"; };
+		BFBA9F904AD2E8025ADCF297 /* BpmDetection+Estimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BpmDetection+Estimation.swift"; sourceTree = "<group>"; };
+		C2BB90199D4DA210739264D0 /* BpmDetection+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BpmDetection+Live.swift"; sourceTree = "<group>"; };
 		C940D4086322443387255EB7 /* LoadingOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingOverlayView.swift; sourceTree = "<group>"; };
 		CA8A2682D0D3F7882B711837 /* Network.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Network.framework; path = System/Library/Frameworks/Network.framework; sourceTree = SDKROOT; };
 		CDEBE2F01E5F07A0F5C7E18F /* PresetManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresetManager.swift; sourceTree = "<group>"; };
 		D046BDAADB25FF1DDD2263B3 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
+		DAD4DB49D3EC4D5A8BC8AB19 /* BpmDetection+Flux.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BpmDetection+Flux.swift"; sourceTree = "<group>"; };
 		DD944B278F01FC34CFD00CBE /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		E0EF34A472A572AAA4B7C0C2 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		EBE1244B292E31110D11ECF0 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -96,6 +120,25 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0A30CA6C7BC8A8419448764E /* SPFKTempo */ = {
+			isa = PBXGroup;
+			children = (
+				6C144A6AAD8646090830A8D1 /* ACFCombFilter.swift */,
+				A364BE4EC8FD3B2C94F2CE82 /* AnalysisQuality.swift */,
+				44BFB286460976943993D2E4 /* AutocorrelationFFT.swift */,
+				2F7CA96685D3634C10E4D2FD /* BpmDetection.swift */,
+				BFBA9F904AD2E8025ADCF297 /* BpmDetection+Estimation.swift */,
+				DAD4DB49D3EC4D5A8BC8AB19 /* BpmDetection+Flux.swift */,
+				C2BB90199D4DA210739264D0 /* BpmDetection+Live.swift */,
+				085C6BAC7069D606D7818332 /* BpmDetection+Tuning.swift */,
+				797457B9B39A919A8D352322 /* BpmDetectionOptions.swift */,
+				1D089D810100847F45FFB3B2 /* ConfidenceLevel.swift */,
+				85176C961954F54AF11FBA3A /* FourierFilterbank.swift */,
+				3152EFB16F06B9B5BB716208 /* LICENSE.txt */,
+			);
+			path = SPFKTempo;
+			sourceTree = "<group>";
+		};
 		495208AD46AE6D460911229C /* Resources */ = {
 			isa = PBXGroup;
 			children = (
@@ -172,6 +215,7 @@
 				1285155A06E8113348983C75 /* SceneReducer.swift */,
 				18897FE143A02E88846D5A2C /* SceneStreamBroadcaster.swift */,
 				7020A24DDB7111AF01557CEC /* VisualOnsetDetector.swift */,
+				0A30CA6C7BC8A8419448764E /* SPFKTempo */,
 			);
 			path = SceneStream;
 			sourceTree = "<group>";
@@ -288,6 +332,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3DE2C4C912ED61FD5722AA03 /* Assets.xcassets in Resources */,
+				23DF38D776DB85AC2965C999 /* LICENSE.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -323,6 +368,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E9A2EBBBF60909487B2EB760 /* ACFCombFilter.swift in Sources */,
+				82DB0D2CE0C71BDDB7D5176C /* AnalysisQuality.swift in Sources */,
 				0364301F756B0FA4F6734001 /* AppCoordinator.swift in Sources */,
 				50E27854596574FBE2270B60 /* AppIdentity.swift in Sources */,
 				85D73E2A449731E122183F07 /* AppSettingsKeys.swift in Sources */,
@@ -331,10 +378,19 @@
 				7C718B2DBEDDE6070ABFF9B9 /* AudioBandAnalyzer.swift in Sources */,
 				FD0A36F04E22385288CE055B /* AudioErrorBannerView.swift in Sources */,
 				9CA5FB9477567EDF98BF6BD7 /* AudioFeed.swift in Sources */,
+				8C17F3DEA66126C1F31E6572 /* AutocorrelationFFT.swift in Sources */,
 				788329D225681317B1F78C76 /* BeatDetector.swift in Sources */,
+				C02C091A429C5908B9B7FCE5 /* BpmDetection+Estimation.swift in Sources */,
+				1057D655B737B8DA711760FF /* BpmDetection+Flux.swift in Sources */,
+				EE1CB4BFFC72DD4F43A987A1 /* BpmDetection+Live.swift in Sources */,
+				64D64C0A28F05E6927B45963 /* BpmDetection+Tuning.swift in Sources */,
+				9D2D9FA7A212D47D77AAF767 /* BpmDetection.swift in Sources */,
+				C825F0DCEFBF2937F764149F /* BpmDetectionOptions.swift in Sources */,
+				C0E3E920C78B1048E8C7B288 /* ConfidenceLevel.swift in Sources */,
 				8742EEE0CD4BE679C973797C /* CoreAudioExtensions.swift in Sources */,
 				624780E650A39E063138FCAB /* DebugOverlayView.swift in Sources */,
 				C3A3EE0449703A722CF6B125 /* DominantColor.swift in Sources */,
+				CC945B35F6947B503B596A26 /* FourierFilterbank.swift in Sources */,
 				2176C63DE83FF11C774324D3 /* LoadingOverlayView.swift in Sources */,
 				230E8AD0C2CCBB60F3CA731B /* PresetManager.swift in Sources */,
 				C4892C6EB0B0B26520D77C05 /* ProcessTapController.swift in Sources */,

@@ -6,6 +6,8 @@ final class RenderStats {
     var fps: Int = 0
     var presetName: String = ""
     var tappedAppName: String?
+    /// The tap's sample rate in Hz, shown next to the app name.
+    var tapSampleRate: Double?
     /// Last tap failure, cleared by the next successful tap. Surfaced by
     /// `AudioErrorBannerView`, since a dead tap otherwise just looks like silence.
     var audioError: String?
@@ -22,7 +24,7 @@ final class RenderStats {
     /// Latest scene-stream reduction. `nil` when broadcasting is off, so the overlay
     /// section disappears instead of freezing on a stale reading.
     var sceneStream: SceneUpdate?
-}
     /// Why OSC sends are failing (bad destination IP, network error), nil while they
     /// succeed. Only shown while broadcasting is on.
     var sceneStreamError: String?
+}

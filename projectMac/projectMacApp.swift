@@ -51,16 +51,14 @@ struct projectMacApp: App {
                     Text("No apps playing audio")
                         .foregroundStyle(.secondary)
                 } else {
+                    // Toggle, not a Button with a checkmark icon: it maps to the menu
+                    // item's native on/off state, which macOS 26+ menus still render
+                    // (a Label's icon no longer reads as a selection mark there).
                     ForEach(coordinator.audioAppMonitor.audioApps) { app in
-                        Button {
-                            coordinator.selectApp(app)
-                        } label: {
-                            if coordinator.currentTappedAppID == app.id {
-                                Label(app.name, systemImage: "checkmark")
-                            } else {
-                                Text(app.name)
-                            }
-                        }
+                        Toggle(app.name, isOn: Binding(
+                            get: { coordinator.currentTappedAppID == app.id },
+                            set: { if $0 { coordinator.selectApp(app) } } // re-clicking the tapped app is a no-op
+                        ))
                     }
                 }
             }

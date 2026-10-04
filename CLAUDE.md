@@ -159,8 +159,8 @@ must only happen on the main thread.
 - **`SceneStream/`** (`BeatDetector.swift`, `VisualOnsetDetector.swift`,
   `AudioBandAnalyzer.swift`, `DominantColor.swift`, `SceneReducer.swift`,
   `SceneStreamBroadcaster.swift`): streams tempo/phase (audio- and visual-derived),
-  dominant-color, and frequency-band state as OSC messages over a loopback UDP socket
-  (`127.0.0.1:9000` by default) for any OSC-aware process to consume — e.g. Chataigne
+  dominant-color, and frequency-band state as OSC messages over UDP
+  (sent to `127.0.0.1:9000` by default; a single `ip:port` string in Settings, unvalidated, e.g. a LAN device) for any OSC-aware process to consume — e.g. Chataigne
   bridging to smart-home lighting, TouchDesigner, or another music-reactive consumer.
   Deliberately a generic OSC source with no consumer-specific logic: it broadcasts both
   audio- and visual-derived rate estimates side by side (a preset's on-screen cut rate

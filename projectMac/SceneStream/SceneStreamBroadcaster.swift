@@ -21,7 +21,7 @@ struct SceneUpdate: Sendable {
 }
 
 /// Broadcasts scene/tempo/color state as OSC (Open Sound Control) messages over a
-/// loopback UDP socket. A generic OSC source — broadcasts both audio- and visual-derived
+/// UDP socket to a configurable IPv4 destination (loopback by default). A generic OSC source — broadcasts both audio- and visual-derived
 /// rate estimates side by side rather than picking a winner — for any OSC-aware tool
 /// (Chataigne, TouchDesigner, a custom script) to consume. Each address is its own
 /// datagram:
@@ -43,23 +43,43 @@ struct SceneUpdate: Sendable {
 final class SceneStreamBroadcaster: @unchecked Sendable {
     private let queue = DispatchQueue(label: "com.projectmac.sceneStreamBroadcaster")
     private let logger = Logger(subsystem: "com.projectmac.app", category: "SceneStreamBroadcaster")
-    private let destAddr: sockaddr_in
+    /// nil while the configured host isn't a valid IPv4 address -- nothing is sent.
+    private var destAddr: sockaddr_in?
     private var fd: Int32
 
     /// Toggled from Settings (main thread), read from the render thread to skip
     /// sampling/broadcasting entirely when off.
     let isEnabled = Atomic<Bool>(false)
 
-    init(host: String = "127.0.0.1", port: UInt16 = 9000) {
-        var addr = sockaddr_in()
-        addr.sin_family = sa_family_t(AF_INET)
-        addr.sin_port = port.bigEndian
-        addr.sin_addr.s_addr = inet_addr(host)
-        destAddr = addr
+    /// Why the last send batch failed (bad destination IP, network error), nil if it
+    /// succeeded. Written on `queue`, read from anywhere.
+    let lastError = Mutex<String?>(nil)
 
+    init() {
         fd = socket(AF_INET, SOCK_DGRAM, 0)
         guard fd >= 0 else {
             fatalError("failed to create SceneStreamBroadcaster socket: \(String(cString: strerror(errno)))")
+        }
+        // Non-blocking: a send the network can't take right now is dropped, never
+        // stalls the queue (a blocked sendto used to freeze the whole stream).
+        _ = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK)
+        var on: Int32 = 1
+        setsockopt(fd, SOL_SOCKET, SO_BROADCAST, &on, socklen_t(MemoryLayout<Int32>.size))
+    }
+
+    /// Safe to call from any thread; takes effect on the next send. `host` must be an
+    /// IPv4 address (a LAN device's IP, 127.0.0.1, or a broadcast address).
+    func setDestination(host: String, port: UInt16) {
+        var addr = sockaddr_in()
+        addr.sin_family = sa_family_t(AF_INET)
+        addr.sin_port = port.bigEndian
+        let valid = inet_pton(AF_INET, host, &addr.sin_addr) == 1
+        if !valid {
+            logger.error("invalid scene stream host \(host, privacy: .public), not sending")
+        }
+        queue.async { [weak self] in
+            self?.destAddr = valid ? addr : nil
+            self?.lastError.withLock { $0 = valid ? nil : "Invalid destination IP: \(host)" }
         }
     }
 
@@ -95,8 +115,8 @@ final class SceneStreamBroadcaster: @unchecked Sendable {
 
     private func send(_ messages: [Data]) {
         queue.async { [weak self] in
-            guard let self, self.fd >= 0 else { return }
-            var addr = self.destAddr
+            guard let self, self.fd >= 0, var addr = self.destAddr else { return }
+            var failure: String?
             for message in messages {
                 let result = message.withUnsafeBytes { buf in
                     withUnsafePointer(to: &addr) { addrPtr -> Int in
@@ -106,9 +126,11 @@ final class SceneStreamBroadcaster: @unchecked Sendable {
                     }
                 }
                 if result < 0 {
-                    self.logger.debug("send failed: \(String(cString: strerror(errno)))")
+                    failure = String(cString: strerror(errno))
+                    self.logger.debug("send failed: \(failure!)")
                 }
             }
+            self.lastError.withLock { $0 = failure.map { "OSC send failed: \($0)" } }
         }
     }
 

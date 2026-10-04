@@ -10,6 +10,8 @@ struct SettingsView: View {
     @AppStorage(AppSettingsKeys.shufflePresets) private var shufflePresets: Bool = false
     @AppStorage(AppSettingsKeys.broadcastSceneStream) private var broadcastSceneStream: Bool = false
 
+    @AppStorage(AppSettingsKeys.oscDestination) private var oscDestination: String = AppSettingsKeys.defaultOSCDestination
+
     private var meshQualityBinding: Binding<Int> {
         Binding(
             get: {
@@ -50,6 +52,10 @@ struct SettingsView: View {
             }
             Section("Scene Stream") {
                 Toggle("Broadcast scene stream", isOn: $broadcastSceneStream)
+                TextField("OSC receiver (ip:port)", text: $oscDestination)
+                    .autocorrectionDisabled()
+                Text("IPv4 address and UDP port of the OSC receiver: 127.0.0.1:9000 for this Mac, or a device on your network.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
@@ -61,6 +67,7 @@ struct SettingsView: View {
         .onChange(of: meshSizeX) { applySettings() }
         .onChange(of: shufflePresets) { applySettings() }
         .onChange(of: broadcastSceneStream) { applySettings() }
+        .onChange(of: oscDestination) { applySettings() }
     }
 
     private func applySettings() {

@@ -57,6 +57,13 @@ final class AppCoordinator {
         presetManager.setShuffle(defaults.bool(forKey: AppSettingsKeys.shufflePresets))
         let broadcastEnabled = defaults.bool(forKey: AppSettingsKeys.broadcastSceneStream)
         sceneStreamBroadcaster.isEnabled.store(broadcastEnabled, ordering: .relaxed)
+        // No validation: a malformed string just yields a bad host/port 0, which the broadcaster reports as a send error.
+        let destination = defaults.string(forKey: AppSettingsKeys.oscDestination) ?? AppSettingsKeys.defaultOSCDestination
+        let parts = destination.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
+        sceneStreamBroadcaster.setDestination(
+            host: String(parts[0]).trimmingCharacters(in: .whitespaces),
+            port: parts.count > 1 ? UInt16(parts[1].trimmingCharacters(in: .whitespaces)) ?? 0 : 0
+        )
         if !broadcastEnabled {
             renderStats.sceneStream = nil
         }

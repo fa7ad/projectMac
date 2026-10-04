@@ -23,3 +23,6 @@ final class RenderStats {
     /// section disappears instead of freezing on a stale reading.
     var sceneStream: SceneUpdate?
 }
+    /// Why OSC sends are failing (bad destination IP, network error), nil while they
+    /// succeed. Only shown while broadcasting is on.
+    var sceneStreamError: String?

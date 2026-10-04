@@ -46,7 +46,7 @@ needed.
 ## Scene stream (OSC)
 
 When "Broadcast scene stream" is on, projectMac sends OSC (Open Sound Control) messages
-over a loopback UDP socket (`127.0.0.1:9000` by default), one address per datagram, for
+over UDP to `127.0.0.1:9000` by default (destination `ip:port` configurable in Settings, e.g. to reach a device on your network), one address per datagram, for
 any OSC-aware process to consume — e.g. Chataigne bridging to smart-home lighting, or
 TouchDesigner. It's deliberately a generic source with no consumer-specific logic:
 audio- and visual-derived tempo are broadcast side by side rather than picking a winner,

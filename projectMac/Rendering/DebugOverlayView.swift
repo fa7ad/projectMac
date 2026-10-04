@@ -30,6 +30,10 @@ struct DebugOverlayView: View {
                 sceneStreamSection(scene)
             }
         }
+                Text(stats.sceneStreamError ?? "OSC: sending")
+                    .foregroundStyle(stats.sceneStreamError == nil ? .green : .red)
+                    .lineLimit(2)
+                    .truncationMode(.middle)
         .font(.system(.caption, design: .monospaced))
         .foregroundStyle(.white)
         .padding(8)

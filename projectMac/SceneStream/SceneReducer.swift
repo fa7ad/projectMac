@@ -69,8 +69,10 @@ final class SceneReducer: @unchecked Sendable {
         DispatchQueue.main.async {
             renderStats.sceneStream = update
         }
+        let sendError = broadcaster.lastError.withLock { $0 }
     }
 
+            renderStats.sceneStreamError = sendError
     /// Mean RGB (not luma) absolute diff — luma washes out a red<->cyan style flip that's
     /// perceptually huge but nets to almost no luma change.
     private func frameDiffEnergy(pixels: [UInt8], gridSize: Int) -> Double {

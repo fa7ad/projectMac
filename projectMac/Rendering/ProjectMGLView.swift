@@ -21,9 +21,9 @@ final class ProjectMGLView: NSOpenGLView {
     private var lastFPSSampleTime = CFAbsoluteTimeGetCurrent()
     private var peakSinceLastSample: Float = 0
 
-    // CVDisplayLink thread only. Assumes ~48kHz; the tap's actual rate varies by source
-    // app, but beat detection doesn't need sample accuracy.
-    private lazy var beatDetector = BeatDetector(sampleRate: coordinator.audioFeed.sampleRate)
+    // CVDisplayLink thread only: lets a broadcast re-enable reset the audio analyzers,
+    // whose sample-counted windows would otherwise span the gap.
+    private var wasBroadcasting = false
 
     // Widened from 8 so k-means (DominantColor) has enough texels to resolve clusters.
     private let colorSampleSize: GLsizei = 32
@@ -98,15 +98,14 @@ final class ProjectMGLView: NSOpenGLView {
         ctx.lock()
         ctx.makeCurrentContext()
         let broadcastEnabled = coordinator.sceneStreamBroadcaster.isEnabled.load(ordering: .relaxed)
-        var pcmCopy: [Float]?
+        if broadcastEnabled && !wasBroadcasting { coordinator.sceneReducer.resetAudio() }
+        wasBroadcasting = broadcastEnabled
         let sampleRate = coordinator.audioFeed.sampleRate
-        if sampleRate != beatDetector.sampleRate {
-            beatDetector = BeatDetector(sampleRate: sampleRate) // tempo is timed in samples
-        }
-        coordinator.audioFeed.drainInto(pm: pm) { [weak self] samples in
-            guard let self, broadcastEnabled else { return }
-            _ = self.beatDetector.push(samples)
-            pcmCopy = Array(samples)
+        let reducer = coordinator.sceneReducer
+        coordinator.audioFeed.drainInto(pm: pm) { samples in
+            guard broadcastEnabled else { return }
+            // Beat/band analysis runs on the reducer's queue, off this thread.
+            reducer.pushAudio(Array(samples), sampleRate: sampleRate, at: CFAbsoluteTimeGetCurrent())
         }
         peakSinceLastSample = max(peakSinceLastSample, coordinator.audioFeed.consumePeakLevel())
         if let fps = sampleFPS() {
@@ -129,12 +128,7 @@ final class ProjectMGLView: NSOpenGLView {
             let pixels = readFramebufferPixels()
             coordinator.sceneReducer.processFrame(
                 pixels: pixels,
-                gridSize: Int(colorSampleSize),
-                audioBPM: beatDetector.currentBPM,
-                audioPhase: beatDetector.phase,
-                pcm: pcmCopy,
-                sampleRate: sampleRate
-            )
+                gridSize: Int(colorSampleSize))
         }
         ctx.flushBuffer()
         ctx.unlock()

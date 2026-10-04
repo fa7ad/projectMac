@@ -10,7 +10,7 @@ import Foundation
 /// still read a real 150bpm song as 100, 120 or 75; splitting kick, snare and hat bands
 /// is what dense real mixes need. Searched over 40-300bpm then octave-folded into
 /// `bpmRange` (searching only 80-160 directly tested much worse), and the reported tempo
-/// is the median of the last three estimates, which hides the odd early-window miss.
+/// is the a changed estimate must repeat before it replaces the current one, which hides the odd misread.
 /// Tempo is timed in samples, so `sampleRate` must be the tap's real rate.
 final class BeatDetector {
     let sampleRate: Double
@@ -30,7 +30,10 @@ final class BeatDetector {
     private let tempoEverySamples: Int
     private var samplesSinceTempo = 0
     private var mono: [Float] = []
-    private var recentEstimates: [Double] = []
+    private let confirmations = 4
+    private var hasTempo = false
+    private var pendingBPM = 0.0
+    private var pendingCount = 0
 
     private(set) var currentBPM: Double = 120
 
@@ -122,9 +125,23 @@ final class BeatDetector {
         while bpm >= bpmRange.upperBound { bpm /= 2 }
         while bpm < bpmRange.lowerBound { bpm *= 2 }
 
-        recentEstimates.append(bpm)
-        if recentEstimates.count > 3 { recentEstimates.removeFirst() }
-        currentBPM = recentEstimates.sorted()[recentEstimates.count / 2]
+        // Hold the current tempo against a lone misread (an octave or 4/3 slip): a
+        // different estimate must repeat `confirmations` times in a row to replace it.
+        func near(_ a: Double, _ b: Double) -> Bool { abs(a - b) < 0.03 * b }
+        if !hasTempo || near(bpm, currentBPM) {
+            hasTempo = true
+            currentBPM = bpm
+            pendingCount = 0
+        } else if pendingCount > 0 && near(bpm, pendingBPM) {
+            pendingCount += 1
+            if pendingCount >= confirmations {
+                currentBPM = bpm
+                pendingCount = 0
+            }
+        } else {
+            pendingBPM = bpm
+            pendingCount = 1
+        }
     }
 
     /// 0.0-1.0 position within the current estimated beat interval.

@@ -11,6 +11,7 @@ final class SceneReducer: @unchecked Sendable {
     private let renderStats: RenderStats
 
     private let visualOnsetDetector = VisualOnsetDetector()
+    private var beatDetector: BeatDetector?
     private var bandAnalyzer: AudioBandAnalyzer?
     private var previousPixels: [UInt8]?
 
@@ -23,20 +24,42 @@ final class SceneReducer: @unchecked Sendable {
         self.renderStats = renderStats
     }
 
-    /// Called once per frame from the CVDisplayLink thread; `pixels`/`pcm` are already
-    /// copied value-type snapshots, so this doesn't reach back into render-thread state.
-    func processFrame(pixels: [UInt8], gridSize: Int, audioBPM: Double, audioPhase: Double, pcm: [Float]?, sampleRate: Double) {
+    /// Called once per frame from the CVDisplayLink thread with that frame's drained PCM.
+    /// Never dropped (unlike `processFrame`): tempo is timed by counting samples, so a
+    /// skipped block would skew it. `at` is when the samples arrived.
+    func pushAudio(_ pcm: [Float], sampleRate: Double, at now: CFAbsoluteTime) {
+        queue.async { [self] in
+            if beatDetector?.sampleRate != sampleRate { // a new tap can change the rate
+                beatDetector = BeatDetector(sampleRate: sampleRate)
+                bandAnalyzer = AudioBandAnalyzer(sampleRate: sampleRate)
+            }
+            pcm.withUnsafeBufferPointer { _ = beatDetector?.push($0, now: now) }
+            bandAnalyzer?.push(interleavedStereo: pcm)
+        }
+    }
+
+    /// Discards analyzer state after a gap in `pushAudio` (broadcasting was off).
+    func resetAudio() {
+        queue.async { [self] in
+            beatDetector = nil
+            bandAnalyzer = nil
+        }
+    }
+
+    /// Called once per frame from the CVDisplayLink thread; `pixels` is an already
+    /// copied value-type snapshot, so this doesn't reach back into render-thread state.
+    func processFrame(pixels: [UInt8], gridSize: Int) {
         guard isProcessing.compareExchange(expected: false, desired: true, ordering: .relaxed).exchanged else {
             return
         }
         queue.async { [weak self] in
             guard let self else { return }
-            self.reduce(pixels: pixels, gridSize: gridSize, audioBPM: audioBPM, audioPhase: audioPhase, pcm: pcm, sampleRate: sampleRate)
+            self.reduce(pixels: pixels, gridSize: gridSize)
             self.isProcessing.store(false, ordering: .relaxed)
         }
     }
 
-    private func reduce(pixels: [UInt8], gridSize: Int, audioBPM: Double, audioPhase: Double, pcm: [Float]?, sampleRate: Double) {
+    private func reduce(pixels: [UInt8], gridSize: Int) {
         let (vibrantRGB, mutedRGB) = DominantColor.vibrantAndMuted(pixels: pixels, gridSize: gridSize)
         let averageRGB = DominantColor.flatAverage(pixels: pixels, gridSize: gridSize)
         let brightness = DominantColor.luma(averageRGB)
@@ -45,17 +68,10 @@ final class SceneReducer: @unchecked Sendable {
         previousPixels = pixels
         let onset = visualOnsetDetector.push(energy)
 
-        if bandAnalyzer?.sampleRate != sampleRate {
-            bandAnalyzer = AudioBandAnalyzer(sampleRate: sampleRate) // a new tap can change the rate
-        }
-        if let pcm {
-            bandAnalyzer?.push(interleavedStereo: pcm)
-        }
-
         let update = SceneUpdate(
             brightness: brightness,
-            audioBPM: audioBPM,
-            audioPhase: audioPhase,
+            audioBPM: beatDetector?.currentBPM ?? 120,
+            audioPhase: beatDetector?.phase ?? 0,
             visualBPM: visualOnsetDetector.currentBPM,
             visualPhase: visualOnsetDetector.phase,
             visualOnset: onset,

@@ -142,7 +142,10 @@ must only happen on the main thread.
 
 - **`AudioFeed`** (`Audio/AudioFeed.swift`): the lock-free SPSC ring buffer bridging
   the HAL I/O thread to the render thread. Drops samples on overflow rather than
-  blocking, since visual latency from a full buffer isn't worth a real-time stall. Its
+  blocking, since visual latency from a full buffer isn't worth a real-time stall. Holds
+  16384 frames (~370ms) and `drainInto` takes everything queued each frame, not
+  projectM's 480-frame max: a cap there starved the drain (~35% of audio dropped) and
+  wrecked tempo; projectM only keeps its newest 576 samples, so extra is harmless. Its
   read/write indices are `Synchronization.Atomic` with release/acquire ordering, so the
   sample stores an index publishes are visible before the index itself is — this is why
   the deployment target is 15.0 rather than the 14.2 that process taps alone would need.
@@ -178,19 +181,23 @@ must only happen on the main thread.
   (string), forwarded from `PresetManager.onPresetChanged` on every preset switch. Raw RGB
   is not on the wire at all — HSV is what real downstream lighting protocols (DMX, Hue)
   want directly.
-  - `BeatDetector`: a causal energy-threshold onset detector, fed the same samples
-    `AudioFeed.drainInto` hands to projectM (via its `tap` closure param), called
-    once per frame on the CVDisplayLink thread — the one detector that stays there,
-    since it's proven-cheap and already working. Tracks a rolling BPM estimate and a
-    `phase` (0.0-1.0 position within the current beat interval) from detected onsets.
+  - `BeatDetector`: two jobs, both on `SceneReducer`'s queue. Onsets: a causal
+    energy-threshold detector (12ms blocks, rolling mean+stddev, refractory period)
+    that drives `phase`. Tempo: the vendored SPFKTempo engine (`SceneStream/SPFKTempo/`,
+    MIT, three-band spectral flux + autocorrelation + comb scoring) over a sliding 8s
+    window, re-estimated twice a second, searched 40-300bpm, octave-folded into
+    80-160 and held until a different estimate repeats 4 times (~2s). Tempo is timed by counting samples, so
+    it needs the tap's real rate (`AudioFeed.sampleRate`) and every block, in order.
+    The render thread hands each frame's drained PCM to `SceneReducer.pushAudio`, which
+    is never dropped (unlike `processFrame`) and is reset via `resetAudio()` when
+    broadcasting is re-enabled.
   - `ProjectMGLView.readFramebufferPixels()` is the only GL-bound step
     (`glBlitFramebuffer` + `glReadPixels` into the 32×32 `sceneSampleFramebuffer`) and
-    is all that still runs on the CVDisplayLink thread; everything downstream of that
+    (plus copying the frame's PCM) is all that still runs on the CVDisplayLink thread; everything downstream of that
     raw pixel array — black-level exclusion, k-means, frame-diff, phase, FFT band
     split, OSC send — runs on `SceneReducer`'s own dedicated serial background queue,
-    off the render thread entirely. `renderFrame` snapshots `beatDetector`'s
-    BPM/phase into local values and hands the pixel array (plus a copy of this
-    frame's PCM block, for the FFT) to `SceneReducer.processFrame`, which drops
+    off the render thread entirely. `renderFrame` hands the pixel array to
+    `SceneReducer.processFrame`, which reads the beat detector's BPM/phase on its own queue and drops
     (rather than backlogs) a frame's work if the queue is still busy with the
     previous one, via an `Atomic<Bool>` in-flight flag — the same "drop rather than
     block" policy `AudioFeed` uses for ring-buffer overflow.

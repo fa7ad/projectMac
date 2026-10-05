@@ -26,6 +26,12 @@ final class MirrorController: @unchecked Sendable {
         ) { [weak self, weak mirror] _ in
             self?.windows.withLock { list in list.removeAll { $0 === mirror } }
         }
+        // Start on another display if there is one, so it only needs fullscreening.
+        if let other = NSScreen.screens.first(where: { $0 != mainView?.window?.screen }) {
+            let frame = other.visibleFrame
+            mirror.setFrameOrigin(NSPoint(x: frame.midX - mirror.frame.width / 2,
+                                          y: frame.midY - mirror.frame.height / 2))
+        }
         windows.withLock { $0.append(mirror) }
         mirror.makeKeyAndOrderFront(nil)
     }

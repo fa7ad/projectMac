@@ -24,7 +24,7 @@ struct SceneUpdate: Sendable {
 /// UDP socket to a configurable IPv4 destination (loopback by default). A generic OSC source — broadcasts both audio- and visual-derived
 /// rate estimates side by side rather than picking a winner — for any OSC-aware tool
 /// (Chataigne, TouchDesigner, a custom script) to consume. Each address is its own
-/// datagram:
+/// message, all of a frame's messages sent in one OSC bundle:
 ///
 ///   /projectmac/tempo/bpm         f       — audio energy-onset BPM estimate
 ///   /projectmac/tempo/phase       f       — 0.0-1.0 position within the current audio beat interval
@@ -65,6 +65,9 @@ final class SceneStreamBroadcaster: @unchecked Sendable {
         _ = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK)
         var on: Int32 = 1
         setsockopt(fd, SOL_SOCKET, SO_BROADCAST, &on, socklen_t(MemoryLayout<Int32>.size))
+        // ~12 datagrams/frame at 60fps; the default buffer overflows on slow links (Wi-Fi).
+        var sndbuf: Int32 = 256 * 1024
+        setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &sndbuf, socklen_t(MemoryLayout<Int32>.size))
     }
 
     /// Safe to call from any thread; takes effect on the next send. `host` must be an
@@ -109,7 +112,7 @@ final class SceneStreamBroadcaster: @unchecked Sendable {
         guard isEnabled.load(ordering: .relaxed) else { return }
         send([
             Self.oscMessage(address: "/projectmac/preset/changed"),
-            Self.oscMessage(address: "/projectmac/preset/name", args: [.string(name)]),
+            Self.oscMessage(address: "/projectmac/preset/name", args: [.string(String(name.prefix(200)))]),
         ])
     }
 
@@ -117,18 +120,19 @@ final class SceneStreamBroadcaster: @unchecked Sendable {
         queue.async { [weak self] in
             guard let self, self.fd >= 0, var addr = self.destAddr else { return }
             var failure: String?
-            for message in messages {
-                let result = message.withUnsafeBytes { buf in
-                    withUnsafePointer(to: &addr) { addrPtr -> Int in
-                        addrPtr.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockaddrPtr in
-                            sendto(self.fd, buf.baseAddress, buf.count, 0, sockaddrPtr, socklen_t(MemoryLayout<sockaddr_in>.size))
-                        }
+            let bundle = Self.oscBundle(messages)
+            let result = bundle.withUnsafeBytes { buf in
+                withUnsafePointer(to: &addr) { addrPtr -> Int in
+                    addrPtr.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockaddrPtr in
+                        sendto(self.fd, buf.baseAddress, buf.count, 0, sockaddrPtr, socklen_t(MemoryLayout<sockaddr_in>.size))
                     }
                 }
-                if result < 0 {
-                    failure = String(cString: strerror(errno))
-                    self.logger.debug("send failed: \(failure!)")
-                }
+            }
+            // EAGAIN = send buffer momentarily full: an intended drop, not an error
+            // (the next frame resends everything), so don't surface it in the UI.
+            if result < 0, errno != EAGAIN {
+                failure = String(cString: strerror(errno))
+                self.logger.debug("send failed: \(failure!)")
             }
             self.lastError.withLock { $0 = failure.map { "OSC send failed: \($0)" } }
         }
@@ -166,6 +170,19 @@ final class SceneStreamBroadcaster: @unchecked Sendable {
             case .string(let value):
                 data.append(oscString(value))
             }
+        }
+        return data
+    }
+
+    /// One OSC 1.0 bundle (timetag 1 = "immediately") holding every message, so a frame is
+    /// one datagram. ponytail: no splitting, a bundle must stay under the MTU (~1.4KB; a
+    /// frame is ~0.5KB, preset names are capped at 200 characters).
+    private static func oscBundle(_ messages: [Data]) -> Data {
+        var data = oscString("#bundle")
+        withUnsafeBytes(of: UInt64(1).bigEndian) { data.append(contentsOf: $0) }
+        for message in messages {
+            withUnsafeBytes(of: Int32(message.count).bigEndian) { data.append(contentsOf: $0) }
+            data.append(message)
         }
         return data
     }

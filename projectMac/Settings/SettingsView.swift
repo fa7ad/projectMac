@@ -11,6 +11,7 @@ struct SettingsView: View {
     @AppStorage(AppSettingsKeys.broadcastSceneStream) private var broadcastSceneStream: Bool = false
 
     @AppStorage(AppSettingsKeys.hdrEnabled) private var hdrEnabled: Bool = false
+    @AppStorage(AppSettingsKeys.borderlessFullscreen) private var borderlessFullscreen: Bool = false
     @AppStorage(AppSettingsKeys.hdrGain) private var hdrGain: Double = 2.0
 
     @AppStorage(AppSettingsKeys.oscDestination) private var oscDestination: String = AppSettingsKeys.defaultOSCDestination
@@ -48,6 +49,9 @@ struct SettingsView: View {
                         Text("HDR highlight boost: \(hdrGain, specifier: "%.1f")×")
                     }
                     .disabled(!hdrEnabled)
+                }
+                Section("Display") {
+                    Toggle("Borderless fullscreen for mirror windows (covers the notch)", isOn: $borderlessFullscreen)
                 }
                 Section("Audio") {
                     Slider(value: $beatSensitivity, in: 0.1...2.0) {

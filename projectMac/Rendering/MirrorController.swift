@@ -61,6 +61,39 @@ private final class MirrorWindow: NSWindow {
         if HDR.isActive { colorSpace = .extendedSRGB }
         center()
     }
+
+    /// Set while in borderless fullscreen: what to put back on exit.
+    private var borderless: (frame: NSRect, style: NSWindow.StyleMask, level: NSWindow.Level)?
+
+    // A borderless window refuses key status by default, which would kill the F key.
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { true }
+
+    /// With the "borderless fullscreen" setting: a plain window covering the whole screen
+    /// frame (menu bar, Dock and notch area included) instead of a native Space.
+    override func toggleFullScreen(_ sender: Any?) {
+        if let saved = borderless {
+            borderless = nil
+            styleMask = saved.style
+            level = saved.level
+            setFrame(saved.frame, display: true)
+            makeFirstResponder(glView)
+        } else if UserDefaults.standard.bool(forKey: AppSettingsKeys.borderlessFullscreen),
+                  !styleMask.contains(.fullScreen), let screen {
+            borderless = (frame, styleMask, level)
+            styleMask = .borderless
+            level = .mainMenu + 1
+            setFrame(screen.frame, display: true)
+            makeFirstResponder(glView) // changing styleMask drops first responder, so F would go nowhere
+        } else {
+            super.toggleFullScreen(sender)
+        }
+    }
+
+    // Titled windows get pushed below the menu bar; the borderless one must not be.
+    override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect {
+        borderless == nil ? super.constrainFrameRect(frameRect, to: screen) : frameRect
+    }
 }
 
 /// Aspect-fills the shared scene texture. All GL happens under the context lock.

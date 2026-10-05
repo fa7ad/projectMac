@@ -12,6 +12,7 @@ enum AppSettingsKeys {
     static let oscDestination = "oscDestination"
     static let hdrEnabled = "hdrEnabled" // read once at launch (pixel format)
     static let hdrGain = "hdrGain"
+    static let borderlessFullscreen = "borderlessFullscreen" // read at toggle time
     static let defaultOSCDestination = "127.0.0.1:9000"
 
     static var defaults: [String: Any] {[
@@ -24,5 +25,6 @@ enum AppSettingsKeys {
         oscDestination: defaultOSCDestination,
         hdrEnabled: false,
         hdrGain: 2.0,
+        borderlessFullscreen: false,
     ]}
 }

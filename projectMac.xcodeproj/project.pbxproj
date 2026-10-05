@@ -49,6 +49,7 @@
 		C4892C6EB0B0B26520D77C05 /* ProcessTapController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7291DF9CE47D314A3CE4ADA1 /* ProcessTapController.swift */; };
 		C825F0DCEFBF2937F764149F /* BpmDetectionOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 797457B9B39A919A8D352322 /* BpmDetectionOptions.swift */; };
 		CC945B35F6947B503B596A26 /* FourierFilterbank.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85176C961954F54AF11FBA3A /* FourierFilterbank.swift */; };
+		E0E1CD47173C35CC8F801558 /* CursorAutoHider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0F176F34F3E92FE7A0041AC /* CursorAutoHider.swift */; };
 		E9A2EBBBF60909487B2EB760 /* ACFCombFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C144A6AAD8646090830A8D1 /* ACFCombFilter.swift */; };
 		EE1CB4BFFC72DD4F43A987A1 /* BpmDetection+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2BB90199D4DA210739264D0 /* BpmDetection+Live.swift */; };
 		FC1F2EA4F65EB06426AFA962 /* TapResources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E5A55BF116FCEB40A59904A /* TapResources.swift */; };
@@ -102,6 +103,7 @@
 		DAD4DB49D3EC4D5A8BC8AB19 /* BpmDetection+Flux.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BpmDetection+Flux.swift"; sourceTree = "<group>"; };
 		DD944B278F01FC34CFD00CBE /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		E0EF34A472A572AAA4B7C0C2 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
+		E0F176F34F3E92FE7A0041AC /* CursorAutoHider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorAutoHider.swift; sourceTree = "<group>"; };
 		EBE1244B292E31110D11ECF0 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		EEC64E855BEE28F22E040271 /* DebugOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugOverlayView.swift; sourceTree = "<group>"; };
 		F7968EDB2F208EA5D68D2F53 /* AppCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCoordinator.swift; sourceTree = "<group>"; };
@@ -253,6 +255,7 @@
 			isa = PBXGroup;
 			children = (
 				54BC0553F5639006BC125F2D /* AudioErrorBannerView.swift */,
+				E0F176F34F3E92FE7A0041AC /* CursorAutoHider.swift */,
 				EEC64E855BEE28F22E040271 /* DebugOverlayView.swift */,
 				5EEBAB965176FAA0B23BF32E /* HDRPass.swift */,
 				C940D4086322443387255EB7 /* LoadingOverlayView.swift */,
@@ -397,6 +400,7 @@
 				C825F0DCEFBF2937F764149F /* BpmDetectionOptions.swift in Sources */,
 				C0E3E920C78B1048E8C7B288 /* ConfidenceLevel.swift in Sources */,
 				8742EEE0CD4BE679C973797C /* CoreAudioExtensions.swift in Sources */,
+				E0E1CD47173C35CC8F801558 /* CursorAutoHider.swift in Sources */,
 				624780E650A39E063138FCAB /* DebugOverlayView.swift in Sources */,
 				C3A3EE0449703A722CF6B125 /* DominantColor.swift in Sources */,
 				CC945B35F6947B503B596A26 /* FourierFilterbank.swift in Sources */,

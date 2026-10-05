@@ -116,11 +116,22 @@ private final class MirrorGLView: NSOpenGLView {
 
     override var acceptsFirstResponder: Bool { true }
 
+    private let cursorHider = CursorAutoHider()
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        cursorHider.updateTracking(on: self)
+    }
+
+    override func mouseMoved(with event: NSEvent) { cursorHider.poke(self) }
+
     override func mouseDown(with event: NSEvent) {
+        cursorHider.poke(self)
         if event.clickCount == 2 { window?.toggleFullScreen(nil) } else { super.mouseDown(with: event) }
     }
 
     override func keyDown(with event: NSEvent) {
+        cursorHider.poke(self)
         if event.charactersIgnoringModifiers?.lowercased() == "f" {
             window?.toggleFullScreen(nil)
         } else {

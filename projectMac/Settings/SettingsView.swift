@@ -10,6 +10,8 @@ struct SettingsView: View {
     @AppStorage(AppSettingsKeys.shufflePresets) private var shufflePresets: Bool = false
     @AppStorage(AppSettingsKeys.broadcastSceneStream) private var broadcastSceneStream: Bool = false
 
+    @AppStorage(AppSettingsKeys.hideIdleCursor) private var hideIdleCursor: Bool = true
+    @AppStorage(AppSettingsKeys.hideCursorDelay) private var hideCursorDelay: Double = 2.5
     @AppStorage(AppSettingsKeys.renderScale) private var renderScale: Double = 1.0
     @AppStorage(AppSettingsKeys.hdrEnabled) private var hdrEnabled: Bool = false
     @AppStorage(AppSettingsKeys.borderlessFullscreen) private var borderlessFullscreen: Bool = false
@@ -58,6 +60,9 @@ struct SettingsView: View {
                         .disabled(!hdrEnabled)
                     Toggle("Borderless mirror fullscreen", isOn: $borderlessFullscreen)
                     hint("Mirror windows fill the whole screen, notch included, instead of using a macOS fullscreen Space.")
+                    Toggle("Hide idle cursor in fullscreen", isOn: $hideIdleCursor)
+                    slider("Hide cursor after", value: $hideCursorDelay, in: 1...10, format: "%.1fs")
+                        .disabled(!hideIdleCursor)
                 }
                 Section("Audio & Presets") {
                     slider("Beat sensitivity", value: $beatSensitivity, in: 0.1...2.0, format: "%.1f")

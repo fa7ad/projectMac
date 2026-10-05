@@ -30,7 +30,7 @@ Components:
 - On-screen debug overlay (`D`): FPS, current preset name, tapped app, and live audio
   diagnostics (peak level, ring-buffer backlog/overflow)
 - Fullscreen (`F`, or a double-click on the visualization); it resizes with the window.
-  Mirror windows can instead use a borderless fullscreen that covers the notch (Settings)
+  Mirror windows can instead use a borderless fullscreen that covers the notch (Settings). The cursor hides after a configurable idle time in fullscreen (Settings)
 - Optional scene stream: broadcasts tempo (both audio-beat-derived and, separately,
   visual-onset-derived, since a preset's on-screen cut rate doesn't always track the
   song's BPM), dominant color (vibrant/muted/average swatches, HSV), brightness,
@@ -41,7 +41,7 @@ Components:
 ## Settings
 
 ⌘, opens the Settings window: mesh quality, render scale (50–200% of the window's pixels), HDR output, borderless
-mirror fullscreen, beat sensitivity, preset duration, shuffle, and the scene-stream
+mirror fullscreen, cursor auto-hide, beat sensitivity, preset duration, shuffle, and the scene-stream
 broadcast toggle and destination — all applied live, except HDR output, which needs a
 restart.
 

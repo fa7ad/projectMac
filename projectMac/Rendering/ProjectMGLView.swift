@@ -265,7 +265,17 @@ final class ProjectMGLView: NSOpenGLView {
         if let dl = displayLink { CVDisplayLinkStart(dl) }
     }
 
+    private let cursorHider = CursorAutoHider()
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        cursorHider.updateTracking(on: self)
+    }
+
+    override func mouseMoved(with event: NSEvent) { cursorHider.poke(self) }
+
     override func mouseDown(with event: NSEvent) {
+        cursorHider.poke(self)
         guard event.clickCount == 2 else {
             super.mouseDown(with: event)
             return
@@ -274,6 +284,7 @@ final class ProjectMGLView: NSOpenGLView {
     }
 
     override func keyDown(with event: NSEvent) {
+        cursorHider.poke(self)
         switch event.charactersIgnoringModifiers?.lowercased() {
         case "n":
             coordinator.nextPreset()

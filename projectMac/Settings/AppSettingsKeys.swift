@@ -13,6 +13,8 @@ enum AppSettingsKeys {
     static let hdrEnabled = "hdrEnabled" // read once at launch (pixel format)
     static let hdrGain = "hdrGain"
     static let borderlessFullscreen = "borderlessFullscreen" // read at toggle time
+    static let hideIdleCursor = "hideIdleCursor" // read at each mouse event
+    static let hideCursorDelay = "hideCursorDelay" // seconds
     static let renderScale = "renderScale" // scene pixels per window pixel (0.5...2)
     static let defaultOSCDestination = "127.0.0.1:9000"
 
@@ -28,5 +30,7 @@ enum AppSettingsKeys {
         hdrGain: 2.0,
         borderlessFullscreen: false,
         renderScale: 1.0,
+        hideIdleCursor: true,
+        hideCursorDelay: 2.5,
     ]}
 }

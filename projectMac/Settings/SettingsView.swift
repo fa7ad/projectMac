@@ -35,39 +35,50 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        Form {
-            Section("Rendering") {
-                Picker("Mesh quality", selection: meshQualityBinding) {
-                    Text("Low (32×24)").tag(0)
-                    Text("Medium (64×48)").tag(1)
-                    Text("High (96×72)").tag(2)
+        VStack(spacing: 0) {
+            Form {
+                Section("Rendering") {
+                    Picker("Mesh quality", selection: meshQualityBinding) {
+                        Text("Low (32×24)").tag(0)
+                        Text("Medium (64×48)").tag(1)
+                        Text("High (96×72)").tag(2)
+                    }
+                    Toggle("HDR output (restart required)", isOn: $hdrEnabled)
+                    Slider(value: $hdrGain, in: 1.0...4.0) {
+                        Text("HDR highlight boost: \(hdrGain, specifier: "%.1f")×")
+                    }
+                    .disabled(!hdrEnabled)
                 }
-                Toggle("HDR output (restart required)", isOn: $hdrEnabled)
-                Slider(value: $hdrGain, in: 1.0...4.0) {
-                    Text("HDR highlight boost: \(hdrGain, specifier: "%.1f")×")
+                Section("Audio") {
+                    Slider(value: $beatSensitivity, in: 0.1...2.0) {
+                        Text("Beat sensitivity: \(beatSensitivity, specifier: "%.1f")")
+                    }
                 }
-                .disabled(!hdrEnabled)
-            }
-            Section("Audio") {
-                Slider(value: $beatSensitivity, in: 0.1...2.0) {
-                    Text("Beat sensitivity: \(beatSensitivity, specifier: "%.1f")")
+                Section("Presets") {
+                    Stepper("Duration: \(Int(presetDuration))s",
+                            value: $presetDuration, in: 5...300, step: 5)
+                    Toggle("Shuffle", isOn: $shufflePresets)
+                }
+                Section("Scene Stream") {
+                    Toggle("Broadcast scene stream", isOn: $broadcastSceneStream)
+                    TextField("OSC receiver (ip:port)", text: $oscDestination)
+                        .autocorrectionDisabled()
+                    Text("IPv4 address and UDP port of the OSC receiver: 127.0.0.1:9000 for this Mac, or a device on your network.")
+                        .font(.caption).foregroundStyle(.secondary)
                 }
             }
-            Section("Presets") {
-                Stepper("Duration: \(Int(presetDuration))s",
-                        value: $presetDuration, in: 5...300, step: 5)
-                Toggle("Shuffle", isOn: $shufflePresets)
-            }
-            Section("Scene Stream") {
-                Toggle("Broadcast scene stream", isOn: $broadcastSceneStream)
-                TextField("OSC receiver (ip:port)", text: $oscDestination)
-                    .autocorrectionDisabled()
-                Text("IPv4 address and UDP port of the OSC receiver: 127.0.0.1:9000 for this Mac, or a device on your network.")
+            .formStyle(.grouped)
+            HStack {
+                Text("Changes apply immediately.")
                     .font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                // Settings are already persisted by `@AppStorage` as they change; this just closes.
+                Button("Save & Close") { NSApp.keyWindow?.performClose(nil) }
+                    .keyboardShortcut(.defaultAction)
             }
+            .padding([.horizontal, .bottom])
         }
-        .formStyle(.grouped)
-        .padding()
+        .padding(.top)
         .frame(width: 380)
         .onAppear { applySettings() }
         .onChange(of: beatSensitivity) { applySettings() }

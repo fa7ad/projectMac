@@ -97,6 +97,22 @@ private final class MirrorGLView: NSOpenGLView {
 
     override func reshape() {
         super.reshape()
+        updateBackingSize()
+    }
+
+    // `reshape` can run before the view has a window/screen, which measures at 1x; these
+    // re-measure once the real backing scale is known (and when it changes).
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        updateBackingSize()
+    }
+
+    override func viewDidChangeBackingProperties() {
+        super.viewDidChangeBackingProperties()
+        updateBackingSize()
+    }
+
+    private func updateBackingSize() {
         guard let ctx = openGLContext else { return }
         ctx.lock()
         ctx.update()

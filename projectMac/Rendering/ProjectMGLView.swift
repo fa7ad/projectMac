@@ -32,6 +32,13 @@ final class ProjectMGLView: NSOpenGLView {
     private var sceneSampleFramebuffer: GLuint = 0
     private var sceneSampleRenderbuffer: GLuint = 0
 
+    // projectM renders into this texture rather than the window's framebuffer, so the
+    // frame can also be sampled by other GL contexts sharing this one (mirror windows).
+    // Sized to the view's backing size; created/resized/read only under the context lock.
+    private var sceneTexture: GLuint = 0
+    private var sceneFramebuffer: GLuint = 0
+    private var sceneSize: (width: GLsizei, height: GLsizei) = (0, 0)
+
     static func makePixelFormat() -> NSOpenGLPixelFormat {
         let attrs: [NSOpenGLPixelFormatAttribute] = [
             UInt32(NSOpenGLPFAOpenGLProfile), UInt32(NSOpenGLProfileVersion3_2Core),
@@ -50,6 +57,7 @@ final class ProjectMGLView: NSOpenGLView {
         openGLContext?.makeCurrentContext()
 
         setupSceneSampleTarget()
+        setupSceneTarget()
         pm = projectm_create()
         updateWindowSize()
         if let pm, let ctx = openGLContext {
@@ -68,8 +76,13 @@ final class ProjectMGLView: NSOpenGLView {
 
     override func reshape() {
         super.reshape()
-        openGLContext?.update()
+        guard let ctx = openGLContext else { return }
+        // Lock: resizing the scene texture can't interleave with the render thread's frame.
+        ctx.lock()
+        ctx.makeCurrentContext()
+        ctx.update()
         updateWindowSize()
+        ctx.unlock()
     }
 
     override func viewDidMoveToWindow() {
@@ -80,7 +93,29 @@ final class ProjectMGLView: NSOpenGLView {
     private func updateWindowSize() {
         let backing = convertToBacking(bounds)
         guard let pm else { return }
+        resizeSceneTarget(width: GLsizei(backing.width), height: GLsizei(backing.height))
         projectm_set_window_size(pm, Int(backing.width), Int(backing.height))
+    }
+
+    /// Needs the context current (and locked unless called during `prepareOpenGL`).
+    private func setupSceneTarget() {
+        glGenTextures(1, &sceneTexture)
+        glBindTexture(GLenum(GL_TEXTURE_2D), sceneTexture)
+        glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_MIN_FILTER), GL_LINEAR)
+        glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_MAG_FILTER), GL_LINEAR)
+        glGenFramebuffers(1, &sceneFramebuffer)
+        resizeSceneTarget(width: 1, height: 1)
+    }
+
+    private func resizeSceneTarget(width: GLsizei, height: GLsizei) {
+        let (w, h) = (max(1, width), max(1, height))
+        guard sceneSize != (w, h) else { return }
+        sceneSize = (w, h)
+        glBindTexture(GLenum(GL_TEXTURE_2D), sceneTexture)
+        glTexImage2D(GLenum(GL_TEXTURE_2D), 0, GL_RGBA8, w, h, 0, GLenum(GL_RGBA), GLenum(GL_UNSIGNED_BYTE), nil)
+        glBindFramebuffer(GLenum(GL_FRAMEBUFFER), sceneFramebuffer)
+        glFramebufferTexture2D(GLenum(GL_FRAMEBUFFER), GLenum(GL_COLOR_ATTACHMENT0), GLenum(GL_TEXTURE_2D), sceneTexture, 0)
+        glBindFramebuffer(GLenum(GL_FRAMEBUFFER), 0)
     }
 
     private func startDisplayLink() {
@@ -123,7 +158,16 @@ final class ProjectMGLView: NSOpenGLView {
                 stats.audioCapacityFrames = capacityFrames
             }
         }
-        projectm_opengl_render_frame(pm)
+        projectm_opengl_render_frame_fbo(pm, sceneFramebuffer)
+        let backing = convertToBacking(bounds)
+        glBindFramebuffer(GLenum(GL_READ_FRAMEBUFFER), sceneFramebuffer)
+        glBindFramebuffer(GLenum(GL_DRAW_FRAMEBUFFER), 0)
+        glBlitFramebuffer(
+            0, 0, sceneSize.width, sceneSize.height,
+            0, 0, GLint(backing.width), GLint(backing.height),
+            GLbitfield(GL_COLOR_BUFFER_BIT), GLenum(GL_NEAREST)
+        )
+        glBindFramebuffer(GLenum(GL_FRAMEBUFFER), 0)
         if broadcastEnabled {
             let pixels = readFramebufferPixels()
             coordinator.sceneReducer.processFrame(
@@ -147,16 +191,14 @@ final class ProjectMGLView: NSOpenGLView {
         glBindFramebuffer(GLenum(GL_FRAMEBUFFER), 0)
     }
 
-    /// Downsamples the whole frame into `sceneSampleFramebuffer` and reads it back as a
+    /// Downsamples the whole scene texture into `sceneSampleFramebuffer` and reads it back as a
     /// raw RGBA8 texel array. The one GL-bound step that can't move off the render
     /// thread; must run with the GL context current, before flushBuffer/unlock.
     private func readFramebufferPixels() -> [UInt8] {
-        let backing = convertToBacking(bounds)
-
-        glBindFramebuffer(GLenum(GL_READ_FRAMEBUFFER), 0)
+        glBindFramebuffer(GLenum(GL_READ_FRAMEBUFFER), sceneFramebuffer)
         glBindFramebuffer(GLenum(GL_DRAW_FRAMEBUFFER), sceneSampleFramebuffer)
         glBlitFramebuffer(
-            0, 0, GLint(backing.width), GLint(backing.height),
+            0, 0, sceneSize.width, sceneSize.height,
             0, 0, colorSampleSize, colorSampleSize,
             GLbitfield(GL_COLOR_BUFFER_BIT), GLenum(GL_LINEAR)
         )

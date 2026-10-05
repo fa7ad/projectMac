@@ -136,7 +136,8 @@ must only happen on the main thread.
   vsync can't stall the render thread. The scene renders once at the main window's size
   (a bigger mirror display upscales it); presets, audio and OSC stay single. Chosen
   displays persist (`mirrorDisplays`) and restore at launch; unplugged displays drop
-  their mirror. A mirror can't target the visualizer window's own display.
+  their mirror. Mirror windows float above other apps only while projectMac is the active
+  app and drop to normal level when it isn't, so switching apps uncovers that display. A mirror can't target the visualizer window's own display.
 
 - **`PresetManager`** (`Presets/PresetManager.swift`): owns the
   `projectm_playlist_handle` for one `projectm_handle` instance; wraps

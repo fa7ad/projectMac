@@ -35,6 +35,11 @@ final class MirrorController: @unchecked Sendable {
         screenObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
         ) { [weak self] _ in self?.screensChanged() }
+        for name in [NSApplication.didBecomeActiveNotification, NSApplication.didResignActiveNotification] {
+            NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                self?.appActiveChanged()
+            }
+        }
 
         // The window isn't on a screen yet during prepareOpenGL; restore once it is.
         let saved = UserDefaults.standard.array(forKey: AppSettingsKeys.mirrorDisplays) as? [Int] ?? []
@@ -65,6 +70,17 @@ final class MirrorController: @unchecked Sendable {
         UserDefaults.standard.set(mirroredDisplayIDs.map { Int($0) }, forKey: AppSettingsKeys.mirrorDisplays)
     }
 
+    /// Mirrors sit above other apps' windows while projectMac is the active app (so they
+    /// fully cover the display), and drop to normal level when you switch away, so the
+    /// app you switched to is visible and usable on that display.
+    private func appActiveChanged() {
+        let active = NSApp.isActive
+        for mirror in windows.withLock({ Array($0.values) }) {
+            mirror.level = active ? .floating : .normal
+            if active { mirror.orderFrontRegardless() }
+        }
+    }
+
     /// Unplugged displays lose their mirror; the rest refit in case a resolution changed.
     private func screensChanged() {
         for id in mirroredDisplayIDs {
@@ -93,9 +109,7 @@ private final class MirrorWindow: NSWindow {
         super.init(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
         contentView = glView
         isReleasedWhenClosed = false
-        // Normal level: other apps' windows can sit above it. A higher level covered the
-        // whole display and made it impossible to reach anything else there.
-        level = .normal
+        level = NSApp.isActive ? .floating : .normal // see `MirrorController.appActiveChanged`
         ignoresMouseEvents = true
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         setFrame(screen.frame, display: true)

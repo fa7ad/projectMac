@@ -1,9 +1,10 @@
 import Foundation
 
-// Vendored from https://github.com/ryanfrancesconi/spfk-tempo @ 1e48414 (MIT, see
-// LICENSE.txt): the BpmDetection engine only, not the file-analysis layer or its
-// SPFKAudioBase dependency. This file is projectMac's addition: live,
-// sliding-window use of the batch engine.
+// Vendored from https://github.com/ryanfrancesconi/spfk-tempo (MIT, see LICENSE.txt;
+// revision in scripts/spfktempo.rev; update with scripts/sync-spfktempo.sh): the BpmDetection engine
+// only, not the file-analysis layer or its SPFKAudioBase dependency. This file is
+// projectMac's addition: live, sliding-window use of the batch engine. It reads the
+// engine's internal state, so a sync that renames things fails to compile here.
 extension BpmDetection {
     /// Onset frames per second of audio.
     var onsetFramesPerSecond: Double { Double(inputSampleRate) / Double(stepSize) }

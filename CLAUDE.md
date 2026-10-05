@@ -39,6 +39,15 @@ whenever presets need refreshing):
 are missing (`ensure_resources` in `scripts/lib.sh`). The guard tests directory
 *existence*, not contents — CI relies on that to skip the fetch with empty placeholders.
 
+Update the vendored SPFKTempo tempo engine (`SceneStream/SPFKTempo/`, pinned in
+`scripts/spfktempo.rev`):
+```bash
+./scripts/sync-spfktempo.sh --check   # has upstream moved?
+./scripts/sync-spfktempo.sh [rev]     # pull it in, then build and re-test tempo
+```
+It replaces the upstream files and keeps our `BpmDetection+Live.swift`, which reads the
+engine's internal state, so an upstream rename surfaces as a compile error there.
+
 Package a Release build into `dist/`:
 ```bash
 ./scripts/package.sh [version]            # DMG (version defaults to `git describe`)

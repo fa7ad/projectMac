@@ -11,6 +11,7 @@ final class AppCoordinator {
     let audioAppMonitor = AudioAppMonitor()
     let audioFeed = AudioFeed()
     let renderStats = RenderStats()
+    let mirrorController = MirrorController()
     let sceneStreamBroadcaster = SceneStreamBroadcaster()
     /// `lazy` so its init can reference `sceneStreamBroadcaster` above; `@ObservationIgnored`
     /// since `@Observable` can't generate tracked-storage accessors for a `lazy` property.

@@ -24,6 +24,7 @@
 		624780E650A39E063138FCAB /* DebugOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEC64E855BEE28F22E040271 /* DebugOverlayView.swift */; };
 		64D64C0A28F05E6927B45963 /* BpmDetection+Tuning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 085C6BAC7069D606D7818332 /* BpmDetection+Tuning.swift */; };
 		6AE11A4F26968C7E10C7C9EE /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AFB7C76485D87754950E3DFD /* CoreAudio.framework */; };
+		74508F5E429EA0651020C074 /* MirrorController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A82DED4C8A9EB5ACD4DB25B8 /* MirrorController.swift */; };
 		788329D225681317B1F78C76 /* BeatDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAF9D0BB5268928FE1A815AE /* BeatDetector.swift */; };
 		7C718B2DBEDDE6070ABFF9B9 /* AudioBandAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 939889107B3EA605D89832A6 /* AudioBandAnalyzer.swift */; };
 		7D7EABD0BB04677C0F44C226 /* VisualOnsetDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7020A24DDB7111AF01557CEC /* VisualOnsetDetector.swift */; };
@@ -84,6 +85,7 @@
 		9C50285D4AFC57F4FC97846D /* AudioFeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioFeed.swift; sourceTree = "<group>"; };
 		A1D97E7379DC1E39A879EFCD /* CoreAudioExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreAudioExtensions.swift; sourceTree = "<group>"; };
 		A364BE4EC8FD3B2C94F2CE82 /* AnalysisQuality.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisQuality.swift; sourceTree = "<group>"; };
+		A82DED4C8A9EB5ACD4DB25B8 /* MirrorController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MirrorController.swift; sourceTree = "<group>"; };
 		AFB7C76485D87754950E3DFD /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		B7586C03F8E60484DBB54590 /* AppSettingsKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettingsKeys.swift; sourceTree = "<group>"; };
 		BAF9D0BB5268928FE1A815AE /* BeatDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeatDetector.swift; sourceTree = "<group>"; };
@@ -248,6 +250,7 @@
 				54BC0553F5639006BC125F2D /* AudioErrorBannerView.swift */,
 				EEC64E855BEE28F22E040271 /* DebugOverlayView.swift */,
 				C940D4086322443387255EB7 /* LoadingOverlayView.swift */,
+				A82DED4C8A9EB5ACD4DB25B8 /* MirrorController.swift */,
 				8678923C4766918FDA5E2909 /* ProjectMGLView.swift */,
 				9B46DA5167DA290CB71BBC15 /* ProjectMViewRepresentable.swift */,
 			);
@@ -392,6 +395,7 @@
 				C3A3EE0449703A722CF6B125 /* DominantColor.swift in Sources */,
 				CC945B35F6947B503B596A26 /* FourierFilterbank.swift in Sources */,
 				2176C63DE83FF11C774324D3 /* LoadingOverlayView.swift in Sources */,
+				74508F5E429EA0651020C074 /* MirrorController.swift in Sources */,
 				230E8AD0C2CCBB60F3CA731B /* PresetManager.swift in Sources */,
 				C4892C6EB0B0B26520D77C05 /* ProcessTapController.swift in Sources */,
 				C41148EFF4BFE568CF2BB1CD /* ProjectMGLView.swift in Sources */,
@@ -423,7 +427,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.5.1;
+				MARKETING_VERSION = 0.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.projectmac.app;
 				PRODUCT_NAME = projectMac;
 				SDKROOT = macosx;
@@ -444,7 +448,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.5.1;
+				MARKETING_VERSION = 0.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.projectmac.app;
 				PRODUCT_NAME = projectMac;
 				SDKROOT = macosx;

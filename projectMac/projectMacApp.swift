@@ -46,6 +46,17 @@ struct projectMacApp: App {
                     .keyboardShortcut("r", modifiers: .command)
             }
 
+            CommandMenu("Display") {
+                // Checkmarks via Toggle, as in the Audio menu. A display the visualizer
+                // window is on can't be mirrored onto (it would cover the window).
+                ForEach(coordinator.mirrorController.screens, id: \.id) { screen in
+                    Toggle("Mirror to \(screen.name)", isOn: Binding(
+                        get: { coordinator.mirrorController.isMirroring(screen.id) },
+                        set: { coordinator.mirrorController.setMirroring(screen.id, on: $0) }
+                    ))
+                }
+            }
+
             CommandMenu("Audio") {
                 if coordinator.audioAppMonitor.audioApps.isEmpty {
                     Text("No apps playing audio")

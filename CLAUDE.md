@@ -114,7 +114,8 @@ must only happen on the main thread.
   *after* `start()` (so the playlist already exists when settings like shuffle apply).
   Because one coordinator holds exactly one `PresetManager`, the app is a single-window
   app: `projectMacApp` uses a `Window` scene (not `WindowGroup`) and disables window
-  tabbing, so no second `ProjectMGLView` can attach over the first one's GL context.
+  tabbing, so no second `ProjectMGLView` can attach over the first one's GL context (mirror
+  windows are not `ProjectMGLView`s and only sample its texture).
 
 - **`ProjectMGLView`** (`Rendering/ProjectMGLView.swift`): an `NSOpenGLView` subclass
   owning the `projectm_handle`, the `CVDisplayLink`, and input handling: keyboard
@@ -124,6 +125,18 @@ must only happen on the main thread.
   creation, it's purely informational (fed to presets for their own calculations) and
   doesn't throttle the actual render cadence, which `CVDisplayLink` drives at the
   display's native rate regardless.
+
+- **Scene texture + `MirrorController`** (`Rendering/`): `ProjectMGLView` renders projectM
+  into an FBO-backed texture (`projectm_opengl_render_frame_fbo`), then blits it to the
+  window; color sampling reads that texture too. `MirrorController` mirrors it onto other
+  displays: one borderless window per chosen screen (Display menu), each an
+  `NSOpenGLView` whose context *shares* the main view's, so it can sample the texture.
+  After the main flush the render thread blits an aspect-*fill* (centre-cropped) copy
+  into each mirror, under that mirror's context lock, with swap interval 0 so a second
+  vsync can't stall the render thread. The scene renders once at the main window's size
+  (a bigger mirror display upscales it); presets, audio and OSC stay single. Chosen
+  displays persist (`mirrorDisplays`) and restore at launch; unplugged displays drop
+  their mirror. A mirror can't target the visualizer window's own display.
 
 - **`PresetManager`** (`Presets/PresetManager.swift`): owns the
   `projectm_playlist_handle` for one `projectm_handle` instance; wraps

@@ -70,6 +70,7 @@ final class ProjectMGLView: NSOpenGLView {
             manager.start(shuffle: UserDefaults.standard.bool(forKey: AppSettingsKeys.shufflePresets))
             coordinator.applyPersistedSettings()
         }
+        coordinator.mirrorController.attach(mainView: self)
         startDisplayLink()
         coordinator.start()
     }
@@ -175,6 +176,9 @@ final class ProjectMGLView: NSOpenGLView {
                 gridSize: Int(colorSampleSize))
         }
         ctx.flushBuffer()
+        // After the flush so the scene texture's commands are submitted before the mirror
+        // contexts read it; the main lock stays held so a resize can't reallocate it meanwhile.
+        coordinator.mirrorController.draw(texture: sceneTexture, width: sceneSize.width, height: sceneSize.height)
         ctx.unlock()
     }
 

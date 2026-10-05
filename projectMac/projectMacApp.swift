@@ -4,6 +4,7 @@ import SwiftUI
 @main
 struct projectMacApp: App {
     @State private var coordinator = AppCoordinator()
+    @State private var presetMenu: PresetMenu?
 
     init() {
         UserDefaults.standard.register(defaults: AppSettingsKeys.defaults)
@@ -14,21 +15,15 @@ struct projectMacApp: App {
 
     var body: some Scene {
         Window("projectMac", id: "visualizer") {
-            ZStack(alignment: .topLeading) {
-                ProjectMViewRepresentable(coordinator: coordinator)
-                    .ignoresSafeArea()
-                if coordinator.renderStats.isLoadingFirstPreset {
-                    LoadingOverlayView()
+            VisualizerContent(coordinator: coordinator)
+                .frame(minWidth: 800, minHeight: 600)
+                .onAppear {
+                    // The SwiftUI main menu exists by now; add the AppKit-built Presets menu to it.
+                    if presetMenu == nil {
+                        presetMenu = PresetMenu(coordinator: coordinator)
+                        presetMenu?.install()
+                    }
                 }
-                if coordinator.renderStats.isDebugOverlayVisible {
-                    DebugOverlayView(stats: coordinator.renderStats)
-                }
-                if let audioError = coordinator.renderStats.audioError {
-                    AudioErrorBannerView(message: audioError)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                }
-            }
-            .frame(minWidth: 800, minHeight: 600)
         }
         .defaultSize(width: 1920, height: 1080)
         .commands {
@@ -36,12 +31,12 @@ struct projectMacApp: App {
                 Button("About projectMac") { showAboutPanel() }
             }
 
+            // The search and browse items are appended to this menu by `PresetMenu`.
             CommandMenu("Presets") {
                 Button("Next Preset") { coordinator.nextPreset() }
                     .keyboardShortcut(.rightArrow, modifiers: .command)
                 Button("Previous Preset") { coordinator.prevPreset() }
                     .keyboardShortcut(.leftArrow, modifiers: .command)
-                Divider()
                 Button("Random Preset") { coordinator.randomPreset() }
                     .keyboardShortcut("r", modifiers: .command)
             }
@@ -100,5 +95,29 @@ struct projectMacApp: App {
         ))
 
         NSApplication.shared.orderFrontStandardAboutPanel(options: [.credits: credits])
+    }
+}
+
+/// The window's content in its own view so that its reads of `renderStats` (debug overlay,
+/// loading, audio error) are tracked here, not by `projectMacApp.body`: a change there
+/// would re-run the body and make SwiftUI rebuild every menu, flickering the Presets menu.
+private struct VisualizerContent: View {
+    let coordinator: AppCoordinator
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            ProjectMViewRepresentable(coordinator: coordinator)
+                .ignoresSafeArea()
+            if coordinator.renderStats.isLoadingFirstPreset {
+                LoadingOverlayView()
+            }
+            if coordinator.renderStats.isDebugOverlayVisible {
+                DebugOverlayView(stats: coordinator.renderStats)
+            }
+            if let audioError = coordinator.renderStats.audioError {
+                AudioErrorBannerView(message: audioError)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+            }
+        }
     }
 }

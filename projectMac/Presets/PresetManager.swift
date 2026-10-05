@@ -83,6 +83,29 @@ final class PresetManager {
         reportCurrentPreset()
     }
 
+    /// Every preset's full path, in current playlist order (what `goToPreset` indexes).
+    func presetPaths() -> [String] {
+        guard let playlist else { return [] }
+        let size = projectm_playlist_size(playlist)
+        guard size > 0, let items = projectm_playlist_items(playlist, 0, size) else { return [] }
+        defer { projectm_playlist_free_string_array(items) }
+        var paths: [String] = []
+        var i = 0
+        while let item = items[i] {
+            paths.append(String(cString: item))
+            i += 1
+        }
+        return paths
+    }
+
+    func goToPreset(_ index: Int) {
+        guard let playlist, index >= 0, index < Int(projectm_playlist_size(playlist)) else { return }
+        withLock {
+            _ = projectm_playlist_set_position(playlist, UInt32(index), false)
+        }
+        reportCurrentPreset()
+    }
+
     // MARK: - Settings
 
     func setBeatSensitivity(_ value: Float) {

@@ -162,6 +162,16 @@ must only happen on the main thread.
   (`NSScreen.maximumExtendedDynamicRangeColorComponentValue`) depends on the macOS
   "High Dynamic Range" display setting.
 
+- **`PresetMenu`** (`Presets/PresetMenu.swift`): search and browse for presets, appended to
+  the SwiftUI-declared `CommandMenu("Presets")` (which holds next/prev/random). SwiftUI menus
+  can't hold a text field, hence AppKit: an `NSSearchField` menu item whose matches are
+  inserted live under it (Return picks the first), and Browse > one submenu per preset
+  directory, filled only when opened. Don't make it a top-level item of our own: SwiftUI
+  rebuilds the main menu on every key event and drops foreign items, which made the whole
+  menu flicker in and out of the bar. Appended items are likewise wiped by those rebuilds, so
+  `attach()` re-adds them whenever the menu bar starts tracking (and on main-menu changes);
+  the host item itself is SwiftUI's and never vanishes. Re-reads the playlist on every open
+  since shuffle changes indices.
 - **`PresetManager`** (`Presets/PresetManager.swift`): owns the
   `projectm_playlist_handle` for one `projectm_handle` instance; wraps
   next/prev/random/settings calls in the GL context lock.

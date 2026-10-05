@@ -178,4 +178,6 @@ final class AppCoordinator {
     func nextPreset() { presetManager?.nextPreset() }
     func prevPreset() { presetManager?.prevPreset() }
     func randomPreset() { presetManager?.randomPreset() }
+    func presetPaths() -> [String] { presetManager?.presetPaths() ?? [] }
+    func goToPreset(_ index: Int) { presetManager?.goToPreset(index) }
 }

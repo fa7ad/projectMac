@@ -36,6 +36,7 @@
 		8C17F3DEA66126C1F31E6572 /* AutocorrelationFFT.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44BFB286460976943993D2E4 /* AutocorrelationFFT.swift */; };
 		99709582C3F5C74A40808FFC /* projectMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAFB6E6B9D926A4DBC815C1A /* projectMacApp.swift */; };
 		9CA5FB9477567EDF98BF6BD7 /* AudioFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C50285D4AFC57F4FC97846D /* AudioFeed.swift */; };
+		9CAA0F29FF7C013D90CDE256 /* PresetMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF78C6F4BF9E74DF14EA2A10 /* PresetMenu.swift */; };
 		9D2D9FA7A212D47D77AAF767 /* BpmDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F7CA96685D3634C10E4D2FD /* BpmDetection.swift */; };
 		A8F6F494CBE2B5EBC43177B3 /* AudioAppMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB0ED0F294D60A71CCA433D /* AudioAppMonitor.swift */; };
 		B17A9F58D0EFAB0164AC376E /* HDRPass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EEBAB965176FAA0B23BF32E /* HDRPass.swift */; };
@@ -88,6 +89,7 @@
 		A1D97E7379DC1E39A879EFCD /* CoreAudioExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreAudioExtensions.swift; sourceTree = "<group>"; };
 		A364BE4EC8FD3B2C94F2CE82 /* AnalysisQuality.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisQuality.swift; sourceTree = "<group>"; };
 		A82DED4C8A9EB5ACD4DB25B8 /* MirrorController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MirrorController.swift; sourceTree = "<group>"; };
+		AF78C6F4BF9E74DF14EA2A10 /* PresetMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresetMenu.swift; sourceTree = "<group>"; };
 		AFB7C76485D87754950E3DFD /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		B7586C03F8E60484DBB54590 /* AppSettingsKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettingsKeys.swift; sourceTree = "<group>"; };
 		BAF9D0BB5268928FE1A815AE /* BeatDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeatDetector.swift; sourceTree = "<group>"; };
@@ -154,6 +156,7 @@
 			isa = PBXGroup;
 			children = (
 				CDEBE2F01E5F07A0F5C7E18F /* PresetManager.swift */,
+				AF78C6F4BF9E74DF14EA2A10 /* PresetMenu.swift */,
 			);
 			path = Presets;
 			sourceTree = "<group>";
@@ -401,6 +404,7 @@
 				2176C63DE83FF11C774324D3 /* LoadingOverlayView.swift in Sources */,
 				74508F5E429EA0651020C074 /* MirrorController.swift in Sources */,
 				230E8AD0C2CCBB60F3CA731B /* PresetManager.swift in Sources */,
+				9CAA0F29FF7C013D90CDE256 /* PresetMenu.swift in Sources */,
 				C4892C6EB0B0B26520D77C05 /* ProcessTapController.swift in Sources */,
 				C41148EFF4BFE568CF2BB1CD /* ProjectMGLView.swift in Sources */,
 				58ADFD0B2464A3F66BF41004 /* ProjectMViewRepresentable.swift in Sources */,

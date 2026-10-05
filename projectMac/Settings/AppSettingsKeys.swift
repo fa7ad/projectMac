@@ -13,6 +13,7 @@ enum AppSettingsKeys {
     static let hdrEnabled = "hdrEnabled" // read once at launch (pixel format)
     static let hdrGain = "hdrGain"
     static let borderlessFullscreen = "borderlessFullscreen" // read at toggle time
+    static let renderScale = "renderScale" // scene pixels per window pixel (0.5...2)
     static let defaultOSCDestination = "127.0.0.1:9000"
 
     static var defaults: [String: Any] {[
@@ -26,5 +27,6 @@ enum AppSettingsKeys {
         hdrEnabled: false,
         hdrGain: 2.0,
         borderlessFullscreen: false,
+        renderScale: 1.0,
     ]}
 }

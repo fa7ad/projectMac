@@ -37,6 +37,7 @@ final class ProjectMGLView: NSOpenGLView {
     // Sized to the view's backing size; created/resized/read only under the context lock.
     private var sceneTexture: GLuint = 0
     private var sceneFramebuffer: GLuint = 0
+    private var appliedRenderScale = 1.0 // main thread (reshape)
     private var sceneSize: (width: GLsizei, height: GLsizei) = (0, 0)
     // HDR output only (nil otherwise): boosts highlights while drawing the texture to the window.
     private var expandPass: ExpandPass?
@@ -74,6 +75,11 @@ final class ProjectMGLView: NSOpenGLView {
             coordinator.applyPersistedSettings()
         }
         coordinator.mirrorController.attach(mainView: self)
+        // Settings writes UserDefaults directly; re-size the scene when the scale changes.
+        NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
+            guard let self, self.renderScale != self.appliedRenderScale else { return }
+            self.reshape()
+        }
         startDisplayLink()
         coordinator.start()
     }
@@ -98,8 +104,21 @@ final class ProjectMGLView: NSOpenGLView {
     private func updateWindowSize() {
         let backing = convertToBacking(bounds)
         guard let pm else { return }
-        resizeSceneTarget(width: GLsizei(backing.width), height: GLsizei(backing.height))
-        projectm_set_window_size(pm, Int(backing.width), Int(backing.height))
+        let scale = renderScale
+        appliedRenderScale = scale
+        var maxSide: GLint = 0
+        glGetIntegerv(GLenum(GL_MAX_TEXTURE_SIZE), &maxSide) // 200% of a big display can exceed it
+        let w = min(max(1, Int(backing.width * scale)), Int(maxSide))
+        let h = min(max(1, Int(backing.height * scale)), Int(maxSide))
+        resizeSceneTarget(width: GLsizei(w), height: GLsizei(h))
+        projectm_set_window_size(pm, w, h)
+    }
+
+    /// Scene pixels per window pixel (Settings); the window blit and mirrors scale the
+    /// scene texture to fit.
+    private var renderScale: Double {
+        let v = UserDefaults.standard.double(forKey: AppSettingsKeys.renderScale)
+        return v > 0 ? min(v, 2) : 1
     }
 
     /// Needs the context current (and locked unless called during `prepareOpenGL`).
@@ -174,7 +193,7 @@ final class ProjectMGLView: NSOpenGLView {
             glBlitFramebuffer(
                 0, 0, sceneSize.width, sceneSize.height,
                 0, 0, GLint(backing.width), GLint(backing.height),
-                GLbitfield(GL_COLOR_BUFFER_BIT), GLenum(GL_NEAREST)
+                GLbitfield(GL_COLOR_BUFFER_BIT), GLenum(GL_LINEAR) // scene may differ from window size
             )
         }
         glBindFramebuffer(GLenum(GL_FRAMEBUFFER), 0)

@@ -10,6 +10,7 @@ struct SettingsView: View {
     @AppStorage(AppSettingsKeys.shufflePresets) private var shufflePresets: Bool = false
     @AppStorage(AppSettingsKeys.broadcastSceneStream) private var broadcastSceneStream: Bool = false
 
+    @AppStorage(AppSettingsKeys.renderScale) private var renderScale: Double = 1.0
     @AppStorage(AppSettingsKeys.hdrEnabled) private var hdrEnabled: Bool = false
     @AppStorage(AppSettingsKeys.borderlessFullscreen) private var borderlessFullscreen: Bool = false
     @AppStorage(AppSettingsKeys.hdrGain) private var hdrGain: Double = 2.0
@@ -44,6 +45,13 @@ struct SettingsView: View {
                         Text("Medium (64×48)").tag(1)
                         Text("High (96×72)").tag(2)
                     }
+                    Picker("Render scale", selection: $renderScale) {
+                        Text("200% (supersampled)").tag(2.0)
+                        Text("100%").tag(1.0)
+                        Text("75%").tag(0.75)
+                        Text("50%").tag(0.5)
+                    }
+                    hint("Pixels rendered relative to the window. Lower is faster (helps heavy presets and transitions); 200% is sharper but needs a powerful GPU.")
                     Toggle("HDR output", isOn: $hdrEnabled)
                     hint("Takes effect after restarting the app.")
                     slider("HDR boost", value: $hdrGain, in: 1.0...4.0, format: "%.1f×")

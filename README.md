@@ -25,7 +25,7 @@ Components:
 
 - Audio source is chosen from the **Audio** menu, listing apps that are currently producing
   audio; the first one found is selected at launch. Changing it takes effect without a restart.
-- Preset navigation: next, previous, random, and shuffle over the ~9,800 presets in
+- Preset navigation: next, previous, random, search-by-name and browse-by-directory (Presets menu), and shuffle over the ~9,800 presets in
   [presets-cream-of-the-crop](https://github.com/projectM-visualizer/presets-cream-of-the-crop)
 - On-screen debug overlay (`D`): FPS, current preset name, tapped app, and live audio
   diagnostics (peak level, ring-buffer backlog/overflow)
@@ -40,7 +40,7 @@ Components:
 
 ## Settings
 
-⌘, opens the Settings window: mesh quality (render resolution), HDR output, borderless
+⌘, opens the Settings window: mesh quality, render scale (50–200% of the window's pixels), HDR output, borderless
 mirror fullscreen, beat sensitivity, preset duration, shuffle, and the scene-stream
 broadcast toggle and destination — all applied live, except HDR output, which needs a
 restart.

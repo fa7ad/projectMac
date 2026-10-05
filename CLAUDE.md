@@ -146,7 +146,9 @@ must only happen on the main thread.
   render thread blits an aspect-*fill* (centre-cropped) copy into each mirror, under
   that mirror's context lock, with swap interval 0 so a second vsync can't stall the
   render thread. The scene renders once at the main window's size (a bigger mirror
-  upscales it); presets, audio and OSC stay single. Mirrors aren't persisted. Earlier
+  upscales it); with `borderlessFullscreen` (Settings) `F`/double-click on a mirror instead
+  resizes it to the whole screen frame at `.mainMenu + 1` (covers the notch; `MirrorWindow`
+  overrides `canBecomeKey` and re-takes first responder, or `F` stops working); presets, audio and OSC stay single. Mirrors aren't persisted. Earlier
   attempts at screen-bound overlay windows either covered the display or sank behind
   other apps, so don't go back to that.
 
@@ -203,8 +205,10 @@ must only happen on the main thread.
   Deliberately a generic OSC source with no consumer-specific logic: it broadcasts both
   audio- and visual-derived rate estimates side by side (a preset's on-screen cut rate
   often doesn't track the song's BPM) and lets each consumer arbitrate which to trust.
-  Toggled by the "Broadcast scene stream" setting (off by default). Addresses, each its
-  own datagram:
+  Toggled by the "Broadcast" setting (off by default). Each frame's messages go out as one
+  OSC bundle (a single datagram; `/projectmac/preset/name` is capped at 200 chars to keep it
+  under the MTU; `EAGAIN` from the non-blocking socket is an intended drop, not surfaced).
+  Addresses:
   `/projectmac/tempo/bpm`, `/projectmac/tempo/phase` (audio-side, from `BeatDetector`);
   `/projectmac/visual/bpm`, `/projectmac/visual/phase`, `/projectmac/visual/onset` (bang,
   visual-side, from `VisualOnsetDetector`); `/projectmac/scene/vibrant`,

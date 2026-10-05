@@ -38,52 +38,46 @@ struct SettingsView: View {
     var body: some View {
         VStack(spacing: 0) {
             Form {
-                Section("Rendering") {
+                Section("Display") {
                     Picker("Mesh quality", selection: meshQualityBinding) {
                         Text("Low (32×24)").tag(0)
                         Text("Medium (64×48)").tag(1)
                         Text("High (96×72)").tag(2)
                     }
-                    Toggle("HDR output (restart required)", isOn: $hdrEnabled)
-                    Slider(value: $hdrGain, in: 1.0...4.0) {
-                        Text("HDR highlight boost: \(hdrGain, specifier: "%.1f")×")
-                    }
-                    .disabled(!hdrEnabled)
+                    Toggle("HDR output", isOn: $hdrEnabled)
+                    hint("Takes effect after restarting the app.")
+                    slider("HDR boost", value: $hdrGain, in: 1.0...4.0, format: "%.1f×")
+                        .disabled(!hdrEnabled)
+                    Toggle("Borderless mirror fullscreen", isOn: $borderlessFullscreen)
+                    hint("Mirror windows fill the whole screen, notch included, instead of using a macOS fullscreen Space.")
                 }
-                Section("Display") {
-                    Toggle("Borderless fullscreen for mirror windows (covers the notch)", isOn: $borderlessFullscreen)
-                }
-                Section("Audio") {
-                    Slider(value: $beatSensitivity, in: 0.1...2.0) {
-                        Text("Beat sensitivity: \(beatSensitivity, specifier: "%.1f")")
-                    }
-                }
-                Section("Presets") {
-                    Stepper("Duration: \(Int(presetDuration))s",
+                Section("Audio & Presets") {
+                    slider("Beat sensitivity", value: $beatSensitivity, in: 0.1...2.0, format: "%.1f")
+                    Stepper("Preset duration: \(Int(presetDuration))s",
                             value: $presetDuration, in: 5...300, step: 5)
-                    Toggle("Shuffle", isOn: $shufflePresets)
+                    Toggle("Shuffle presets", isOn: $shufflePresets)
                 }
-                Section("Scene Stream") {
-                    Toggle("Broadcast scene stream", isOn: $broadcastSceneStream)
-                    TextField("OSC receiver (ip:port)", text: $oscDestination)
+                Section("Scene Stream (OSC)") {
+                    Toggle("Broadcast", isOn: $broadcastSceneStream)
+                    TextField("Receiver", text: $oscDestination, prompt: Text("ip:port"))
                         .autocorrectionDisabled()
-                    Text("IPv4 address and UDP port of the OSC receiver: 127.0.0.1:9000 for this Mac, or a device on your network.")
-                        .font(.caption).foregroundStyle(.secondary)
+                    hint("IPv4 address and UDP port of the OSC receiver: 127.0.0.1:9000 for this Mac, or a device on your network.")
                 }
             }
             .formStyle(.grouped)
+            .scrollDisabled(true) // size the window to the form instead of scrolling
+            .fixedSize(horizontal: false, vertical: true) // a grouped Form's ideal height is tiny; use its full content height
             HStack {
                 Text("Changes apply immediately.")
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer()
                 // Settings are already persisted by `@AppStorage` as they change; this just closes.
-                Button("Save & Close") { NSApp.keyWindow?.performClose(nil) }
+                Button("Done") { NSApp.keyWindow?.performClose(nil) }
                     .keyboardShortcut(.defaultAction)
             }
             .padding([.horizontal, .bottom])
         }
-        .padding(.top)
-        .frame(width: 380)
+        .frame(width: 420)
         .onAppear { applySettings() }
         .onChange(of: beatSensitivity) { applySettings() }
         .onChange(of: presetDuration) { applySettings() }
@@ -92,6 +86,20 @@ struct SettingsView: View {
         .onChange(of: broadcastSceneStream) { applySettings() }
         .onChange(of: oscDestination) { applySettings() }
         .onChange(of: hdrGain) { applySettings() }
+    }
+
+    private func hint(_ text: String) -> some View {
+        Text(text).font(.caption).foregroundStyle(.secondary)
+    }
+
+    /// Label left, live value right, same layout for every slider.
+    private func slider(_ title: String, value: Binding<Double>, in range: ClosedRange<Double>, format: String) -> some View {
+        LabeledContent(title) {
+            HStack {
+                Slider(value: value, in: range).frame(width: 160)
+                Text(String(format: format, value.wrappedValue)).monospacedDigit().frame(width: 40, alignment: .trailing)
+            }
+        }
     }
 
     private func applySettings() {

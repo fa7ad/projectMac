@@ -46,6 +46,12 @@ struct projectMacApp: App {
                 // double-click).
                 Button("New Mirror Window") { coordinator.mirrorController.openMirrorWindow() }
                     .keyboardShortcut("m", modifiers: [.command, .shift])
+                // One picture spread over all displays; fullscreen the main window on its own
+                // display (F) for the full effect. F on another display's slice turns it off.
+                Toggle("Span Across Displays", isOn: Binding(
+                    get: { coordinator.isSpanning },
+                    set: { coordinator.mirrorController.setSpan($0) }
+                ))
             }
 
             CommandMenu("Audio") {

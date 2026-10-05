@@ -148,7 +148,17 @@ must only happen on the main thread.
   render thread. The scene renders once at the main window's size (a bigger mirror
   upscales it); with `borderlessFullscreen` (Settings) `F`/double-click on a mirror instead
   resizes it to the whole screen frame at `.mainMenu + 1` (covers the notch; `MirrorWindow`
-  overrides `canBecomeKey` and re-takes first responder, or `F` stops working); presets, audio and OSC stay single. Mirrors aren't persisted. Earlier
+  overrides `canBecomeKey` and re-takes first responder, or `F` stops working); presets, audio and OSC stay single. Mirrors aren't persisted.
+  **Span mode** (Display > Span Across Displays, `MirrorController.setSpan`): the scene becomes
+  one canvas; each display gets a `SceneRegion` slice of it, per the "Span layout" setting
+  (`spanLayout`): `displays` (default) puts displays side by side at equal height, ordered by
+  `frame.minX`, so nothing is cropped or empty; `arrangement` uses the `NSScreen` frames from
+  System Settings (vertical offsets and gaps honoured, uncovered canvas not shown). Either way
+  the canvas is the bounding box at the sharpest display's pixel density, and points are not
+  physical sizes (no mm-based layout; judged not worth it). The main
+  window draws its own slice (`ProjectMGLView` reads `mirrorController.mainRegion`/`spanCanvas`
+  under the context lock), other displays get borderless span mirrors that `F` closes. Re-sliced
+  when displays or the main window's display change. Earlier
   attempts at screen-bound overlay windows either covered the display or sank behind
   other apps, so don't go back to that.
 

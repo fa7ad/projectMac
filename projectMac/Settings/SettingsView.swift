@@ -12,6 +12,7 @@ struct SettingsView: View {
 
     @AppStorage(AppSettingsKeys.hideIdleCursor) private var hideIdleCursor: Bool = true
     @AppStorage(AppSettingsKeys.hideCursorDelay) private var hideCursorDelay: Double = 2.5
+    @AppStorage(AppSettingsKeys.spanLayout) private var spanLayout: String = "displays"
     @AppStorage(AppSettingsKeys.renderScale) private var renderScale: Double = 1.0
     @AppStorage(AppSettingsKeys.hdrEnabled) private var hdrEnabled: Bool = false
     @AppStorage(AppSettingsKeys.borderlessFullscreen) private var borderlessFullscreen: Bool = false
@@ -58,6 +59,11 @@ struct SettingsView: View {
                     hint("Takes effect after restarting the app.")
                     slider("HDR boost", value: $hdrGain, in: 1.0...4.0, format: "%.1f×")
                         .disabled(!hdrEnabled)
+                    Picker("Span layout", selection: $spanLayout) {
+                        Text("Match displays").tag("displays")
+                        Text("Match arrangement").tag("arrangement")
+                    }
+                    hint("How Span Across Displays slices the picture. Displays: side by side at equal height, no gaps. Arrangement: as laid out in System Settings, vertical offsets included.")
                     Toggle("Borderless mirror fullscreen", isOn: $borderlessFullscreen)
                     hint("Mirror windows fill the whole screen, notch included, instead of using a macOS fullscreen Space.")
                     Toggle("Hide idle cursor in fullscreen", isOn: $hideIdleCursor)

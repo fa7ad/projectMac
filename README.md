@@ -29,6 +29,7 @@ Components:
   [presets-cream-of-the-crop](https://github.com/projectM-visualizer/presets-cream-of-the-crop)
 - On-screen debug overlay (`D`): FPS, current preset name, tapped app, and live audio
   diagnostics (peak level, ring-buffer backlog/overflow)
+- Span across displays (Display menu): one picture spread over all your displays, each showing its slice; the layout can follow your System Settings arrangement
 - Fullscreen (`F`, or a double-click on the visualization); it resizes with the window.
   Mirror windows can instead use a borderless fullscreen that covers the notch (Settings). The cursor hides after a configurable idle time in fullscreen (Settings)
 - Optional scene stream: broadcasts tempo (both audio-beat-derived and, separately,

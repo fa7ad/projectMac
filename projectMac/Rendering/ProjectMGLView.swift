@@ -106,10 +106,14 @@ final class ProjectMGLView: NSOpenGLView {
         guard let pm else { return }
         let scale = renderScale
         appliedRenderScale = scale
+        // While spanning, the scene is the canvas covering every display, not this window.
+        let base = coordinator.mirrorController.spanCanvas ?? (width: Int(backing.width), height: Int(backing.height))
         var maxSide: GLint = 0
         glGetIntegerv(GLenum(GL_MAX_TEXTURE_SIZE), &maxSide) // 200% of a big display can exceed it
-        let w = min(max(1, Int(backing.width * scale)), Int(maxSide))
-        let h = min(max(1, Int(backing.height * scale)), Int(maxSide))
+        // Shrink both sides by the same factor if the larger exceeds the texture limit (keeps the aspect).
+        let fit = min(1, Double(maxSide) / (Double(max(base.width, base.height)) * scale))
+        let w = max(1, Int(Double(base.width) * scale * fit))
+        let h = max(1, Int(Double(base.height) * scale * fit))
         resizeSceneTarget(width: GLsizei(w), height: GLsizei(h))
         projectm_set_window_size(pm, w, h)
     }
@@ -184,14 +188,20 @@ final class ProjectMGLView: NSOpenGLView {
         }
         projectm_opengl_render_frame_fbo(pm, sceneFramebuffer)
         let backing = convertToBacking(bounds)
+        // The whole scene, or this window's slice of it while spanning displays.
+        let src = coordinator.mirrorController.mainRegion.fillRect(
+            scene: Double(sceneSize.width), Double(sceneSize.height), dest: backing.width, backing.height)
         if let expandPass {
-            expandPass.draw(texture: sceneTexture, uvOffset: (0, 0), uvScale: (1, 1),
+            let (sw, sh) = (Float(sceneSize.width), Float(sceneSize.height))
+            expandPass.draw(texture: sceneTexture,
+                            uvOffset: (Float(src.x0) / sw, Float(src.y0) / sh),
+                            uvScale: (Float(src.x1 - src.x0) / sw, Float(src.y1 - src.y0) / sh),
                             gain: coordinator.hdrGain.value, width: GLint(backing.width), height: GLint(backing.height))
         } else {
             glBindFramebuffer(GLenum(GL_READ_FRAMEBUFFER), sceneFramebuffer)
             glBindFramebuffer(GLenum(GL_DRAW_FRAMEBUFFER), 0)
             glBlitFramebuffer(
-                0, 0, sceneSize.width, sceneSize.height,
+                src.x0, src.y0, src.x1, src.y1,
                 0, 0, GLint(backing.width), GLint(backing.height),
                 GLbitfield(GL_COLOR_BUFFER_BIT), GLenum(GL_LINEAR) // scene may differ from window size
             )

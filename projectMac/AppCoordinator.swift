@@ -13,6 +13,8 @@ final class AppCoordinator {
     let renderStats = RenderStats()
     let mirrorController = MirrorController()
     let hdrGain = HDRGain()
+    /// Mirrors `MirrorController.isSpanning` for the menu checkmark.
+    var isSpanning = false
     let sceneStreamBroadcaster = SceneStreamBroadcaster()
     /// `lazy` so its init can reference `sceneStreamBroadcaster` above; `@ObservationIgnored`
     /// since `@Observable` can't generate tracked-storage accessors for a `lazy` property.
@@ -39,6 +41,7 @@ final class AppCoordinator {
     /// that load too.
     func attach(presetManager: PresetManager) {
         self.presetManager = presetManager
+        mirrorController.onSpanChanged = { [weak self] on in self?.isSpanning = on }
         presetManager.onPresetChanged = { [weak self] name in
             self?.renderStats.presetName = name
             self?.renderStats.isLoadingFirstPreset = false

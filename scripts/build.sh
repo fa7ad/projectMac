@@ -17,6 +17,7 @@ Options:
   -c, --configuration NAME   Build configuration.
       --unsigned             Disable code signing (what CI uses).
       --with-deps            Build libprojectM and fetch presets/textures first.
+  -r, --run                  Launch the app after a successful build.
   -h, --help                 Show this help.
 
 Examples:
@@ -24,6 +25,7 @@ Examples:
   scripts/build.sh Release
   scripts/build.sh --unsigned
   scripts/build.sh --with-deps
+  scripts/build.sh --run
   scripts/build.sh -- -quiet
 EOF
 }
@@ -31,6 +33,7 @@ EOF
 CONFIGURATION="Debug"
 UNSIGNED=0
 WITH_DEPS=0
+RUN=0
 EXTRA=()
 
 while [ $# -gt 0 ]; do
@@ -38,6 +41,7 @@ while [ $# -gt 0 ]; do
     -c|--configuration) CONFIGURATION="$2"; shift 2 ;;
     --unsigned)         UNSIGNED=1; shift ;;
     --with-deps)        WITH_DEPS=1; shift ;;
+    -r|--run)           RUN=1; shift ;;
     -h|--help)          usage; exit 0 ;;
     --)                 shift; EXTRA=("$@"); break ;;
     Debug|Release)      CONFIGURATION="$1"; shift ;;
@@ -58,3 +62,11 @@ BUILD_ARGS=(--configuration "$CONFIGURATION")
 [ ${#EXTRA[@]} -gt 0 ] && BUILD_ARGS+=(-- "${EXTRA[@]}")
 
 xcode_build "${BUILD_ARGS[@]}"
+
+if [ "$RUN" -eq 1 ]; then
+  settings="$(xcodebuild -project "$PROJECT" -scheme "$SCHEME" -configuration "$CONFIGURATION" -showBuildSettings 2>/dev/null)"
+  app="$(awk -F' = ' '/^ *TARGET_BUILD_DIR =/{d=$2} /^ *FULL_PRODUCT_NAME =/{n=$2} END{print d "/" n}' <<<"$settings")"
+  [ -d "$app" ] || die "built app not found at $app"
+  log "Launching $app"
+  open "$app"
+fi

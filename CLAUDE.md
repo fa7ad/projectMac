@@ -22,6 +22,7 @@ Build (regenerates the Xcode project via XcodeGen, then builds):
 ./scripts/build.sh Release      # Release
 ./scripts/build.sh --unsigned   # skip code signing (what CI uses)
 ./scripts/build.sh --with-deps  # build libprojectM + fetch resources first
+./scripts/build.sh --run        # launch the app after building
 ./scripts/build.sh --help
 ```
 

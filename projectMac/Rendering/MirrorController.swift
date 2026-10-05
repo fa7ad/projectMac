@@ -32,9 +32,9 @@ final class MirrorController: @unchecked Sendable {
 
     /// CVDisplayLink thread, after the main view's frame is flushed (so the texture's
     /// commands are submitted before another context reads it).
-    func draw(texture: GLuint, width: GLsizei, height: GLsizei) {
+    func draw(texture: GLuint, width: GLsizei, height: GLsizei, gain: Float) {
         let current = windows.withLock { $0 }
-        for mirror in current { mirror.glView.draw(texture: texture, width: width, height: height) }
+        for mirror in current { mirror.glView.draw(texture: texture, width: width, height: height, gain: gain) }
     }
 }
 
@@ -52,6 +52,7 @@ private final class MirrorWindow: NSWindow {
         contentAspectRatio = size
         isReleasedWhenClosed = false
         collectionBehavior = [.fullScreenPrimary]
+        if HDR.isActive { colorSpace = .extendedSRGB }
         center()
     }
 }
@@ -59,6 +60,7 @@ private final class MirrorWindow: NSWindow {
 /// Aspect-fills the shared scene texture. All GL happens under the context lock.
 private final class MirrorGLView: NSOpenGLView {
     private var readFramebuffer: GLuint = 0
+    private var expandPass: ExpandPass? // HDR only; created lazily in this view's context
     private var backingSize = (width: GLint(1), height: GLint(1)) // under the context lock
 
     init(frame: NSRect, sharing mainContext: NSOpenGLContext) {
@@ -66,6 +68,7 @@ private final class MirrorGLView: NSOpenGLView {
         super.init(frame: frame, pixelFormat: format)!
         openGLContext = NSOpenGLContext(format: format, share: mainContext)
         wantsBestResolutionOpenGLSurface = true
+        wantsExtendedDynamicRangeOpenGLSurface = HDR.isActive
         // Don't block the render thread on this display's vsync as well as the main one's.
         openGLContext?.setValues([0], for: .swapInterval)
     }
@@ -96,35 +99,42 @@ private final class MirrorGLView: NSOpenGLView {
         ctx.unlock()
     }
 
-    func draw(texture: GLuint, width: GLsizei, height: GLsizei) {
+    func draw(texture: GLuint, width: GLsizei, height: GLsizei, gain: Float) {
         guard let ctx = openGLContext else { return }
         ctx.lock()
         defer { ctx.unlock() }
         ctx.makeCurrentContext()
-        if readFramebuffer == 0 { glGenFramebuffers(1, &readFramebuffer) }
-
-        glBindFramebuffer(GLenum(GL_READ_FRAMEBUFFER), readFramebuffer)
-        glFramebufferTexture2D(GLenum(GL_READ_FRAMEBUFFER), GLenum(GL_COLOR_ATTACHMENT0), GLenum(GL_TEXTURE_2D), texture, 0)
-        glBindFramebuffer(GLenum(GL_DRAW_FRAMEBUFFER), 0)
-
+        if HDR.isActive && expandPass == nil { expandPass = ExpandPass() }
         // Centre-crop the source to the destination's aspect ratio.
         let (dw, dh) = (Double(backingSize.width), Double(backingSize.height))
         let (sw, sh) = (Double(width), Double(height))
-        var (x0, y0, x1, y1) = (GLint(0), GLint(0), GLint(width), GLint(height))
+        var (x0, y0, x1, y1) = (0.0, 0.0, sw, sh)
         if sw * dh > dw * sh { // source wider than destination: crop the sides
             let cropped = sh * dw / dh
-            x0 = GLint((sw - cropped) / 2)
-            x1 = GLint((sw + cropped) / 2)
+            x0 = (sw - cropped) / 2
+            x1 = (sw + cropped) / 2
         } else {
             let cropped = sw * dh / dw
-            y0 = GLint((sh - cropped) / 2)
-            y1 = GLint((sh + cropped) / 2)
+            y0 = (sh - cropped) / 2
+            y1 = (sh + cropped) / 2
         }
-        glBlitFramebuffer(
-            x0, y0, x1, y1,
-            0, 0, backingSize.width, backingSize.height,
-            GLbitfield(GL_COLOR_BUFFER_BIT), GLenum(GL_LINEAR)
-        )
+
+        if let expandPass {
+            expandPass.draw(texture: texture,
+                            uvOffset: (Float(x0 / sw), Float(y0 / sh)),
+                            uvScale: (Float((x1 - x0) / sw), Float((y1 - y0) / sh)),
+                            gain: gain, width: backingSize.width, height: backingSize.height)
+        } else {
+            if readFramebuffer == 0 { glGenFramebuffers(1, &readFramebuffer) }
+            glBindFramebuffer(GLenum(GL_READ_FRAMEBUFFER), readFramebuffer)
+            glFramebufferTexture2D(GLenum(GL_READ_FRAMEBUFFER), GLenum(GL_COLOR_ATTACHMENT0), GLenum(GL_TEXTURE_2D), texture, 0)
+            glBindFramebuffer(GLenum(GL_DRAW_FRAMEBUFFER), 0)
+            glBlitFramebuffer(
+                GLint(x0), GLint(y0), GLint(x1), GLint(y1),
+                0, 0, backingSize.width, backingSize.height,
+                GLbitfield(GL_COLOR_BUFFER_BIT), GLenum(GL_LINEAR)
+            )
+        }
         glBindFramebuffer(GLenum(GL_FRAMEBUFFER), 0)
         ctx.flushBuffer()
     }

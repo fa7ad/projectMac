@@ -12,6 +12,7 @@ final class AppCoordinator {
     let audioFeed = AudioFeed()
     let renderStats = RenderStats()
     let mirrorController = MirrorController()
+    let hdrGain = HDRGain()
     let sceneStreamBroadcaster = SceneStreamBroadcaster()
     /// `lazy` so its init can reference `sceneStreamBroadcaster` above; `@ObservationIgnored`
     /// since `@Observable` can't generate tracked-storage accessors for a `lazy` property.
@@ -56,6 +57,7 @@ final class AppCoordinator {
             height: defaults.integer(forKey: AppSettingsKeys.meshSizeY)
         )
         presetManager.setShuffle(defaults.bool(forKey: AppSettingsKeys.shufflePresets))
+        hdrGain.value = Float(defaults.double(forKey: AppSettingsKeys.hdrGain))
         let broadcastEnabled = defaults.bool(forKey: AppSettingsKeys.broadcastSceneStream)
         sceneStreamBroadcaster.isEnabled.store(broadcastEnabled, ordering: .relaxed)
         // No validation: a malformed string just yields a bad host/port 0, which the broadcaster reports as a send error.

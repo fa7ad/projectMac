@@ -10,6 +10,9 @@ struct SettingsView: View {
     @AppStorage(AppSettingsKeys.shufflePresets) private var shufflePresets: Bool = false
     @AppStorage(AppSettingsKeys.broadcastSceneStream) private var broadcastSceneStream: Bool = false
 
+    @AppStorage(AppSettingsKeys.hdrEnabled) private var hdrEnabled: Bool = false
+    @AppStorage(AppSettingsKeys.hdrGain) private var hdrGain: Double = 2.0
+
     @AppStorage(AppSettingsKeys.oscDestination) private var oscDestination: String = AppSettingsKeys.defaultOSCDestination
 
     private var meshQualityBinding: Binding<Int> {
@@ -39,6 +42,11 @@ struct SettingsView: View {
                     Text("Medium (64×48)").tag(1)
                     Text("High (96×72)").tag(2)
                 }
+                Toggle("HDR output (restart required)", isOn: $hdrEnabled)
+                Slider(value: $hdrGain, in: 1.0...4.0) {
+                    Text("HDR highlight boost: \(hdrGain, specifier: "%.1f")×")
+                }
+                .disabled(!hdrEnabled)
             }
             Section("Audio") {
                 Slider(value: $beatSensitivity, in: 0.1...2.0) {
@@ -68,6 +76,7 @@ struct SettingsView: View {
         .onChange(of: shufflePresets) { applySettings() }
         .onChange(of: broadcastSceneStream) { applySettings() }
         .onChange(of: oscDestination) { applySettings() }
+        .onChange(of: hdrGain) { applySettings() }
     }
 
     private func applySettings() {

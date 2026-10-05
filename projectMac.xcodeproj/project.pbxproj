@@ -38,6 +38,7 @@
 		9CA5FB9477567EDF98BF6BD7 /* AudioFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C50285D4AFC57F4FC97846D /* AudioFeed.swift */; };
 		9D2D9FA7A212D47D77AAF767 /* BpmDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F7CA96685D3634C10E4D2FD /* BpmDetection.swift */; };
 		A8F6F494CBE2B5EBC43177B3 /* AudioAppMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB0ED0F294D60A71CCA433D /* AudioAppMonitor.swift */; };
+		B17A9F58D0EFAB0164AC376E /* HDRPass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EEBAB965176FAA0B23BF32E /* HDRPass.swift */; };
 		B56FCF1D57B56A9BCA83B11D /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBE1244B292E31110D11ECF0 /* SettingsView.swift */; };
 		BE64AB2B960C501A40A87D3B /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D046BDAADB25FF1DDD2263B3 /* OpenGL.framework */; };
 		C02C091A429C5908B9B7FCE5 /* BpmDetection+Estimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFBA9F904AD2E8025ADCF297 /* BpmDetection+Estimation.swift */; };
@@ -70,6 +71,7 @@
 		54BC0553F5639006BC125F2D /* AudioErrorBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioErrorBannerView.swift; sourceTree = "<group>"; };
 		5A9B33401E546EFA6347A6D8 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		5E127A08007AF2E6F6FAAAFA /* projectMac.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = projectMac.entitlements; sourceTree = "<group>"; };
+		5EEBAB965176FAA0B23BF32E /* HDRPass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HDRPass.swift; sourceTree = "<group>"; };
 		6C144A6AAD8646090830A8D1 /* ACFCombFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ACFCombFilter.swift; sourceTree = "<group>"; };
 		6E5A55BF116FCEB40A59904A /* TapResources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapResources.swift; sourceTree = "<group>"; };
 		6F2B9DD1BC759D30B0B9BBFB /* AudioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioApp.swift; sourceTree = "<group>"; };
@@ -249,6 +251,7 @@
 			children = (
 				54BC0553F5639006BC125F2D /* AudioErrorBannerView.swift */,
 				EEC64E855BEE28F22E040271 /* DebugOverlayView.swift */,
+				5EEBAB965176FAA0B23BF32E /* HDRPass.swift */,
 				C940D4086322443387255EB7 /* LoadingOverlayView.swift */,
 				A82DED4C8A9EB5ACD4DB25B8 /* MirrorController.swift */,
 				8678923C4766918FDA5E2909 /* ProjectMGLView.swift */,
@@ -394,6 +397,7 @@
 				624780E650A39E063138FCAB /* DebugOverlayView.swift in Sources */,
 				C3A3EE0449703A722CF6B125 /* DominantColor.swift in Sources */,
 				CC945B35F6947B503B596A26 /* FourierFilterbank.swift in Sources */,
+				B17A9F58D0EFAB0164AC376E /* HDRPass.swift in Sources */,
 				2176C63DE83FF11C774324D3 /* LoadingOverlayView.swift in Sources */,
 				74508F5E429EA0651020C074 /* MirrorController.swift in Sources */,
 				230E8AD0C2CCBB60F3CA731B /* PresetManager.swift in Sources */,

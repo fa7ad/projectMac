@@ -10,6 +10,8 @@ enum AppSettingsKeys {
     static let shufflePresets = "shufflePresets"
     static let broadcastSceneStream = "broadcastSceneStream"
     static let oscDestination = "oscDestination"
+    static let hdrEnabled = "hdrEnabled" // read once at launch (pixel format)
+    static let hdrGain = "hdrGain"
     static let defaultOSCDestination = "127.0.0.1:9000"
 
     static var defaults: [String: Any] {[
@@ -20,5 +22,7 @@ enum AppSettingsKeys {
         shufflePresets: false,
         broadcastSceneStream: false,
         oscDestination: defaultOSCDestination,
+        hdrEnabled: false,
+        hdrGain: 2.0,
     ]}
 }

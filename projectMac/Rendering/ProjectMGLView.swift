@@ -38,14 +38,15 @@ final class ProjectMGLView: NSOpenGLView {
     private var sceneTexture: GLuint = 0
     private var sceneFramebuffer: GLuint = 0
     private var sceneSize: (width: GLsizei, height: GLsizei) = (0, 0)
+    // HDR output only (nil otherwise): boosts highlights while drawing the texture to the window.
+    private var expandPass: ExpandPass?
 
     static func makePixelFormat() -> NSOpenGLPixelFormat {
         let attrs: [NSOpenGLPixelFormatAttribute] = [
             UInt32(NSOpenGLPFAOpenGLProfile), UInt32(NSOpenGLProfileVersion3_2Core),
             UInt32(NSOpenGLPFADoubleBuffer),
             UInt32(NSOpenGLPFADepthSize), 24,
-            0
-        ]
+        ] + (HDR.isActive ? [UInt32(NSOpenGLPFAColorFloat), UInt32(NSOpenGLPFAColorSize), 64] : []) + [0]
         return NSOpenGLPixelFormat(attributes: attrs)!
     }
 
@@ -54,7 +55,9 @@ final class ProjectMGLView: NSOpenGLView {
     override func prepareOpenGL() {
         super.prepareOpenGL()
         wantsBestResolutionOpenGLSurface = true
+        wantsExtendedDynamicRangeOpenGLSurface = HDR.isActive
         openGLContext?.makeCurrentContext()
+        if HDR.isActive { expandPass = ExpandPass() }
 
         setupSceneSampleTarget()
         setupSceneTarget()
@@ -88,6 +91,7 @@ final class ProjectMGLView: NSOpenGLView {
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
+        if HDR.isActive { window?.colorSpace = .extendedSRGB }
         window?.makeFirstResponder(self)
     }
 
@@ -161,13 +165,18 @@ final class ProjectMGLView: NSOpenGLView {
         }
         projectm_opengl_render_frame_fbo(pm, sceneFramebuffer)
         let backing = convertToBacking(bounds)
-        glBindFramebuffer(GLenum(GL_READ_FRAMEBUFFER), sceneFramebuffer)
-        glBindFramebuffer(GLenum(GL_DRAW_FRAMEBUFFER), 0)
-        glBlitFramebuffer(
-            0, 0, sceneSize.width, sceneSize.height,
-            0, 0, GLint(backing.width), GLint(backing.height),
-            GLbitfield(GL_COLOR_BUFFER_BIT), GLenum(GL_NEAREST)
-        )
+        if let expandPass {
+            expandPass.draw(texture: sceneTexture, uvOffset: (0, 0), uvScale: (1, 1),
+                            gain: coordinator.hdrGain.value, width: GLint(backing.width), height: GLint(backing.height))
+        } else {
+            glBindFramebuffer(GLenum(GL_READ_FRAMEBUFFER), sceneFramebuffer)
+            glBindFramebuffer(GLenum(GL_DRAW_FRAMEBUFFER), 0)
+            glBlitFramebuffer(
+                0, 0, sceneSize.width, sceneSize.height,
+                0, 0, GLint(backing.width), GLint(backing.height),
+                GLbitfield(GL_COLOR_BUFFER_BIT), GLenum(GL_NEAREST)
+            )
+        }
         glBindFramebuffer(GLenum(GL_FRAMEBUFFER), 0)
         if broadcastEnabled {
             let pixels = readFramebufferPixels()
@@ -178,7 +187,8 @@ final class ProjectMGLView: NSOpenGLView {
         ctx.flushBuffer()
         // After the flush so the scene texture's commands are submitted before the mirror
         // contexts read it; the main lock stays held so a resize can't reallocate it meanwhile.
-        coordinator.mirrorController.draw(texture: sceneTexture, width: sceneSize.width, height: sceneSize.height)
+        coordinator.mirrorController.draw(texture: sceneTexture, width: sceneSize.width, height: sceneSize.height,
+                                          gain: coordinator.hdrGain.value)
         ctx.unlock()
     }
 

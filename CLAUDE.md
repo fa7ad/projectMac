@@ -141,6 +141,16 @@ must only happen on the main thread.
   attempts at screen-bound overlay windows either covered the display or sank behind
   other apps, so don't go back to that.
 
+- **HDR output** (`Rendering/HDRPass.swift`, opt-in, Settings, restart required): with
+  `hdrEnabled` the GL views use a half-float pixel format +
+  `wantsExtendedDynamicRangeOpenGLSurface` + `.extendedSRGB` window colour space, and
+  the scene texture is drawn through `ExpandPass` (a luma-gated highlight gain, blacks
+  unchanged) instead of a plain blit. Presets are 0...1, so the gain is what produces
+  values above SDR white. The pixel format is fixed at launch (`HDR.isActive`), so
+  mirrors use it too. Prototype: whether a given display actually grants headroom
+  (`NSScreen.maximumExtendedDynamicRangeColorComponentValue`) depends on the macOS
+  "High Dynamic Range" display setting.
+
 - **`PresetManager`** (`Presets/PresetManager.swift`): owns the
   `projectm_playlist_handle` for one `projectm_handle` instance; wraps
   next/prev/random/settings calls in the GL context lock.

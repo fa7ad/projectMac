@@ -93,7 +93,9 @@ private final class MirrorWindow: NSWindow {
         super.init(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
         contentView = glView
         isReleasedWhenClosed = false
-        level = .statusBar
+        // Normal level: other apps' windows can sit above it. A higher level covered the
+        // whole display and made it impossible to reach anything else there.
+        level = .normal
         ignoresMouseEvents = true
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         setFrame(screen.frame, display: true)

@@ -128,16 +128,16 @@ must only happen on the main thread.
 
 - **Scene texture + `MirrorController`** (`Rendering/`): `ProjectMGLView` renders projectM
   into an FBO-backed texture (`projectm_opengl_render_frame_fbo`), then blits it to the
-  window; color sampling reads that texture too. `MirrorController` mirrors it onto other
-  displays: one borderless window per chosen screen (Display menu), each an
-  `NSOpenGLView` whose context *shares* the main view's, so it can sample the texture.
-  After the main flush the render thread blits an aspect-*fill* (centre-cropped) copy
-  into each mirror, under that mirror's context lock, with swap interval 0 so a second
-  vsync can't stall the render thread. The scene renders once at the main window's size
-  (a bigger mirror display upscales it); presets, audio and OSC stay single. Chosen
-  displays persist (`mirrorDisplays`) and restore at launch; unplugged displays drop
-  their mirror. Mirror windows float above other apps only while projectMac is the active
-  app and drop to normal level when it isn't, so switching apps uncovers that display. A mirror can't target the visualizer window's own display.
+  window; color sampling reads that texture too. `MirrorController` mirrors it into extra
+  ordinary windows (Display > New Mirror Window): drag one to another display and
+  fullscreen it there (`F`/double-click). Each is an `NSOpenGLView` whose context
+  *shares* the main view's, so it can sample the texture. After the main flush the
+  render thread blits an aspect-*fill* (centre-cropped) copy into each mirror, under
+  that mirror's context lock, with swap interval 0 so a second vsync can't stall the
+  render thread. The scene renders once at the main window's size (a bigger mirror
+  upscales it); presets, audio and OSC stay single. Mirrors aren't persisted. Earlier
+  attempts at screen-bound overlay windows either covered the display or sank behind
+  other apps, so don't go back to that.
 
 - **`PresetManager`** (`Presets/PresetManager.swift`): owns the
   `projectm_playlist_handle` for one `projectm_handle` instance; wraps

@@ -47,14 +47,10 @@ struct projectMacApp: App {
             }
 
             CommandMenu("Display") {
-                // Checkmarks via Toggle, as in the Audio menu. A display the visualizer
-                // window is on can't be mirrored onto (it would cover the window).
-                ForEach(coordinator.mirrorController.screens, id: \.id) { screen in
-                    Toggle("Mirror to \(screen.name)", isOn: Binding(
-                        get: { coordinator.mirrorController.isMirroring(screen.id) },
-                        set: { coordinator.mirrorController.setMirroring(screen.id, on: $0) }
-                    ))
-                }
+                // Drag the new window to another display and fullscreen it there (F or
+                // double-click).
+                Button("New Mirror Window") { coordinator.mirrorController.openMirrorWindow() }
+                    .keyboardShortcut("m", modifiers: [.command, .shift])
             }
 
             CommandMenu("Audio") {

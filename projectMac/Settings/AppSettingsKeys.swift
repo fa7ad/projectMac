@@ -10,8 +10,6 @@ enum AppSettingsKeys {
     static let shufflePresets = "shufflePresets"
     static let broadcastSceneStream = "broadcastSceneStream"
     static let oscDestination = "oscDestination"
-    /// CGDirectDisplayIDs being mirrored; written by `MirrorController`, not a Settings control.
-    static let mirrorDisplays = "mirrorDisplays"
     static let defaultOSCDestination = "127.0.0.1:9000"
 
     static var defaults: [String: Any] {[

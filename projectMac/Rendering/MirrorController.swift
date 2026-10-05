@@ -1,102 +1,39 @@
 import AppKit
-import Observation
 import Synchronization
-import os
 
-/// Mirrors the visualizer onto other displays: one borderless window per chosen screen,
-/// each with its own GL context sharing the main one's objects so it can sample
-/// `ProjectMGLView`'s scene texture. The scene is rendered once; every mirror just
-/// aspect-fills a blit of it, so presets, audio and OSC stay single.
+/// Mirrors the visualizer into extra ordinary windows: "New Mirror Window" opens one you
+/// can drag to another display and fullscreen like any window. Each window's GL view has
+/// its own context *sharing* the main one's objects, so it can sample `ProjectMGLView`'s
+/// scene texture. The scene is rendered once; every mirror aspect-fills a blit of it, so
+/// presets, audio and OSC stay single.
 ///
-/// Main thread: `toggle`, window lifecycle. CVDisplayLink thread: `draw`, which only
-/// takes a snapshot of `windows` and then the per-context lock.
-@Observable
+/// Main thread: window lifecycle. CVDisplayLink thread: `draw`, which only takes a
+/// snapshot of `windows` and then the per-context lock.
 final class MirrorController: @unchecked Sendable {
-    /// Drives the menu's checkmarks; mutated on the main thread only.
-    private(set) var mirroredDisplayIDs: Set<CGDirectDisplayID> = []
-
-    @ObservationIgnored private let logger = Logger(subsystem: "com.projectmac.app", category: "MirrorController")
-    @ObservationIgnored private let windows = Mutex<[CGDirectDisplayID: MirrorWindow]>([:])
-    @ObservationIgnored private weak var mainView: ProjectMGLView?
-    @ObservationIgnored private var screenObserver: NSObjectProtocol?
-
-    static func displayID(of screen: NSScreen) -> CGDirectDisplayID? {
-        screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID
-    }
-
-    /// Connected displays, for the menu.
-    var screens: [(id: CGDirectDisplayID, name: String)] {
-        NSScreen.screens.compactMap { s in Self.displayID(of: s).map { ($0, s.localizedName) } }
-    }
+    private let windows = Mutex<[MirrorWindow]>([])
+    private weak var mainView: ProjectMGLView?
 
     /// Called from `ProjectMGLView.prepareOpenGL`, once its context exists.
     func attach(mainView: ProjectMGLView) {
         self.mainView = mainView
-        screenObserver = NotificationCenter.default.addObserver(
-            forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
-        ) { [weak self] _ in self?.screensChanged() }
-        for name in [NSApplication.didBecomeActiveNotification, NSApplication.didResignActiveNotification] {
-            NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
-                self?.appActiveChanged()
-            }
-        }
-
-        // The window isn't on a screen yet during prepareOpenGL; restore once it is.
-        let saved = UserDefaults.standard.array(forKey: AppSettingsKeys.mirrorDisplays) as? [Int] ?? []
-        DispatchQueue.main.async { [weak self] in
-            for id in saved { self?.setMirroring(CGDirectDisplayID(id), on: true) }
-        }
     }
 
-    func isMirroring(_ id: CGDirectDisplayID) -> Bool { mirroredDisplayIDs.contains(id) }
-
-    func setMirroring(_ id: CGDirectDisplayID, on: Bool) {
-        if !on {
-            windows.withLock { $0.removeValue(forKey: id) }?.close()
-        } else if !mirroredDisplayIDs.contains(id) {
-            guard let view = mainView, let ctx = view.openGLContext,
-                  let screen = NSScreen.screens.first(where: { Self.displayID(of: $0) == id }),
-                  // A mirror over the visualizer's own display would just cover it.
-                  screen != view.window?.screen
-            else {
-                logger.error("cannot mirror display \(id): no GL context, unknown screen, or it is the visualizer's own")
-                return
-            }
-            let mirror = MirrorWindow(screen: screen, sharing: ctx)
-            windows.withLock { $0[id] = mirror }
-            mirror.orderFrontRegardless()
+    func openMirrorWindow() {
+        guard let ctx = mainView?.openGLContext else { return }
+        let mirror = MirrorWindow(sharing: ctx)
+        NotificationCenter.default.addObserver(
+            forName: NSWindow.willCloseNotification, object: mirror, queue: .main
+        ) { [weak self, weak mirror] _ in
+            self?.windows.withLock { list in list.removeAll { $0 === mirror } }
         }
-        mirroredDisplayIDs = Set(windows.withLock { $0.keys })
-        UserDefaults.standard.set(mirroredDisplayIDs.map { Int($0) }, forKey: AppSettingsKeys.mirrorDisplays)
-    }
-
-    /// Mirrors sit above other apps' windows while projectMac is the active app (so they
-    /// fully cover the display), and drop to normal level when you switch away, so the
-    /// app you switched to is visible and usable on that display.
-    private func appActiveChanged() {
-        let active = NSApp.isActive
-        for mirror in windows.withLock({ Array($0.values) }) {
-            mirror.level = active ? .floating : .normal
-            if active { mirror.orderFrontRegardless() }
-        }
-    }
-
-    /// Unplugged displays lose their mirror; the rest refit in case a resolution changed.
-    private func screensChanged() {
-        for id in mirroredDisplayIDs {
-            if let screen = NSScreen.screens.first(where: { Self.displayID(of: $0) == id }) {
-                windows.withLock { $0[id] }?.setFrame(screen.frame, display: true)
-            } else {
-                windows.withLock { $0.removeValue(forKey: id) }?.close()
-            }
-        }
-        mirroredDisplayIDs = Set(windows.withLock { $0.keys })
+        windows.withLock { $0.append(mirror) }
+        mirror.makeKeyAndOrderFront(nil)
     }
 
     /// CVDisplayLink thread, after the main view's frame is flushed (so the texture's
     /// commands are submitted before another context reads it).
     func draw(texture: GLuint, width: GLsizei, height: GLsizei) {
-        let current = windows.withLock { Array($0.values) }
+        let current = windows.withLock { $0 }
         for mirror in current { mirror.glView.draw(texture: texture, width: width, height: height) }
     }
 }
@@ -104,20 +41,19 @@ final class MirrorController: @unchecked Sendable {
 private final class MirrorWindow: NSWindow {
     let glView: MirrorGLView
 
-    init(screen: NSScreen, sharing mainContext: NSOpenGLContext) {
-        glView = MirrorGLView(frame: NSRect(origin: .zero, size: screen.frame.size), sharing: mainContext)
-        super.init(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
+    init(sharing mainContext: NSOpenGLContext) {
+        let size = NSSize(width: 960, height: 540)
+        glView = MirrorGLView(frame: NSRect(origin: .zero, size: size), sharing: mainContext)
+        super.init(contentRect: NSRect(origin: .zero, size: size),
+                   styleMask: [.titled, .closable, .miniaturizable, .resizable],
+                   backing: .buffered, defer: false)
+        title = "projectMac Mirror"
         contentView = glView
+        contentAspectRatio = size
         isReleasedWhenClosed = false
-        level = NSApp.isActive ? .floating : .normal // see `MirrorController.appActiveChanged`
-        ignoresMouseEvents = true
-        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
-        setFrame(screen.frame, display: true)
+        collectionBehavior = [.fullScreenPrimary]
+        center()
     }
-
-    // Keeps keyboard focus on the visualizer window.
-    override var canBecomeKey: Bool { false }
-    override var canBecomeMain: Bool { false }
 }
 
 /// Aspect-fills the shared scene texture. All GL happens under the context lock.
@@ -135,6 +71,20 @@ private final class MirrorGLView: NSOpenGLView {
     }
 
     required init?(coder: NSCoder) { fatalError("unused") }
+
+    override var acceptsFirstResponder: Bool { true }
+
+    override func mouseDown(with event: NSEvent) {
+        if event.clickCount == 2 { window?.toggleFullScreen(nil) } else { super.mouseDown(with: event) }
+    }
+
+    override func keyDown(with event: NSEvent) {
+        if event.charactersIgnoringModifiers?.lowercased() == "f" {
+            window?.toggleFullScreen(nil)
+        } else {
+            super.keyDown(with: event)
+        }
+    }
 
     override func reshape() {
         super.reshape()

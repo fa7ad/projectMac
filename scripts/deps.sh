@@ -7,20 +7,22 @@ cd "$REPO_ROOT"
 # Builds libprojectM 4.x from source into $PREFIX. Also run by CI
 # (.github/actions/setup-build), so keep the cmake invocation here only.
 
-REPO="https://github.com/projectM-visualizer/projectm.git"
 SRC_DIR="$REPO_ROOT/vendor/projectm"
 BUILD_DIR="$SRC_DIR/build"
 
 require_tools git cmake
 
 if [ -d "$SRC_DIR/.git" ]; then
-  log "Updating $SRC_DIR"
-  git -C "$SRC_DIR" pull --ff-only
+  log "Updating $SRC_DIR to $PROJECTM_REPO @ $PROJECTM_REF"
+  git -C "$SRC_DIR" remote set-url origin "$PROJECTM_REPO"
 else
   log "Cloning libprojectM into $SRC_DIR"
   mkdir -p "$(dirname "$SRC_DIR")"
-  git clone "$REPO" "$SRC_DIR"
+  git init -q "$SRC_DIR"
+  git -C "$SRC_DIR" remote add origin "$PROJECTM_REPO"
 fi
+git -C "$SRC_DIR" fetch --quiet origin "$PROJECTM_REF"
+git -C "$SRC_DIR" checkout --quiet --detach FETCH_HEAD
 git -C "$SRC_DIR" submodule update --init
 
 log "Configuring libprojectM (prefix $PREFIX, deployment target $DEPLOYMENT_TARGET)"

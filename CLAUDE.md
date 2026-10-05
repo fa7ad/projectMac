@@ -65,6 +65,13 @@ Verification is interactive: build, run via `open projectMac.xcodeproj` or
 `scripts/build.sh` + launch, and exercise the feature by hand (audio tap selection,
 preset navigation, settings, fullscreen).
 
+libprojectM comes from a fork branch, not upstream: `PROJECTM_REPO`/`PROJECTM_REF` in
+`scripts/lib.sh` (`fa7ad/projectm@batch-custom-shape-instances`), which batches custom-shape
+draw calls (one preset went from 15 to ~58 fps on macOS's OpenGL-over-Metal layer). The patch
+lives in `~/local-proj/projectm` too; once it's merged upstream, point those two variables
+back at `projectM-visualizer/projectm` and `master`. `deps.sh` fetches that ref and checks it
+out detached; CI's cache key is the ref's commit SHA.
+
 libprojectM itself must be built from source into `$PREFIX` (default `/usr/local`)
 before the app can link (Homebrew's `projectm` cask is 3.1.x with an old C++ API; this
 project needs 4.x's C API). `./scripts/deps.sh` does this: clones/updates

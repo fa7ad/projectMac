@@ -1,7 +1,7 @@
 name: Setup build
 description: >
   Installs cmake/xcodegen/glm and builds libprojectM 4.x from source, cached by the
-  upstream repo's current commit SHA.
+  the commit SHA of the configured libprojectM ref (see scripts/lib.sh).
 
 runs:
   using: composite
@@ -17,7 +17,8 @@ runs:
       shell: bash
       run: |
         echo "PREFIX=$HOME/libprojectm" >> "$GITHUB_ENV"
-        echo "sha=$(git ls-remote https://github.com/projectM-visualizer/projectm.git HEAD | cut -f1)" >> "$GITHUB_OUTPUT"
+        source scripts/lib.sh
+        echo "sha=$(git ls-remote "$PROJECTM_REPO" "$PROJECTM_REF" | cut -f1)" >> "$GITHUB_OUTPUT"
 
     - name: Cache libprojectM build
       id: cache-libprojectm

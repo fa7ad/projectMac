@@ -16,6 +16,12 @@ DIST_DIR="$REPO_ROOT/dist"
 # xcode_build passes this through as PROJECTM_PREFIX, which project.yml's search
 # paths are written in terms of.
 PREFIX="${PREFIX:-/usr/local}"
+
+# libprojectM source. Temporarily a fork branch that batches custom-shape draw calls
+# (15 -> 59 fps on presets with ~1000 shape instances on macOS's OpenGL-over-Metal layer);
+# point back at upstream's master once that is merged. Used by deps.sh and CI's cache key.
+PROJECTM_REPO="${PROJECTM_REPO:-https://github.com/fa7ad/projectm.git}"
+PROJECTM_REF="${PROJECTM_REF:-batch-custom-shape-instances}"
 DEPLOYMENT_TARGET="${DEPLOYMENT_TARGET:-15.0}"
 
 log() { printf '\033[1;34m==>\033[0m %s\n' "$*"; }

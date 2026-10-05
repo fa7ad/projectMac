@@ -16,20 +16,25 @@ Arguments:
 
 Options:
       --no-dmg    Emit dist/$APP_NAME-VERSION.app instead of a DMG.
+      --install   Also replace /Applications/$APP_NAME.app with the Release build
+                  (quits the app first if it's running).
   -h, --help      Show this help.
 
 Examples:
   scripts/package.sh                    # dist/$APP_NAME-<version>.dmg
   scripts/package.sh v0.2.0 --no-dmg    # dist/$APP_NAME-v0.2.0.app
+  scripts/package.sh --install          # package, then install over /Applications
 EOF
 }
 
 VERSION=""
 WANT_DMG=1
+INSTALL=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --no-dmg)  WANT_DMG=0; shift ;;
+    --install) INSTALL=1; shift ;;
     -h|--help) usage; exit 0 ;;
     -*)        usage >&2; die "unknown option '$1'" ;;
     *)
@@ -66,4 +71,17 @@ else
   rm -rf "$DEST_APP"
   cp -R "$APP_PATH" "$DEST_APP"
   log "Created $DEST_APP"
+fi
+
+if [ "$INSTALL" -eq 1 ]; then
+  INSTALL_PATH="/Applications/$APP_NAME.app"
+  if pgrep -qx "$APP_NAME"; then
+    log "Quitting running $APP_NAME"
+    osascript -e "tell application \"$APP_NAME\" to quit" >/dev/null 2>&1 || true
+    for _ in 1 2 3 4 5 6 7 8 9 10; do pgrep -qx "$APP_NAME" || break; sleep 0.5; done
+    pgrep -qx "$APP_NAME" && die "$APP_NAME is still running; quit it and re-run"
+  fi
+  rm -rf "$INSTALL_PATH"
+  cp -R "$APP_PATH" "$INSTALL_PATH"
+  log "Installed $INSTALL_PATH"
 fi

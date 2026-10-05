@@ -43,6 +43,7 @@ Package a Release build into `dist/`:
 ```bash
 ./scripts/package.sh [version]            # DMG (version defaults to `git describe`)
 ./scripts/package.sh [version] --no-dmg   # projectMac-<version>.app instead
+./scripts/package.sh --install            # also replace /Applications/projectMac.app
 ```
 Pushing a `v*` tag runs `scripts/package.sh` in CI
 (`.github/workflows/release.yml`) and attaches the DMG to a GitHub Release.

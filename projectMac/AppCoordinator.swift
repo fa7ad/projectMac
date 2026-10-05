@@ -15,6 +15,10 @@ final class AppCoordinator {
     let hdrGain = HDRGain()
     /// Mirrors `MirrorController.isSpanning` for the menu checkmark.
     var isSpanning = false
+    /// Display > Span Test Pattern: a static alignment grid instead of the preset.
+    var isShowingTestPattern = false {
+        didSet { mirrorController.testPattern.store(isShowingTestPattern, ordering: .relaxed) }
+    }
     let sceneStreamBroadcaster = SceneStreamBroadcaster()
     /// `lazy` so its init can reference `sceneStreamBroadcaster` above; `@ObservationIgnored`
     /// since `@Observable` can't generate tracked-storage accessors for a `lazy` property.

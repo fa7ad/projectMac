@@ -1,6 +1,15 @@
 import AppKit
 import Synchronization
 
+extension NSScreen {
+    /// Identifies a display across launches (its `CGDirectDisplayID` isn't stable).
+    var spanKey: String {
+        let id = (deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value ?? 0
+        guard let uuid = CGDisplayCreateUUIDFromDisplayID(id)?.takeRetainedValue() else { return "\(id)" }
+        return CFUUIDCreateString(nil, uuid) as String
+    }
+}
+
 /// A rectangle of the scene texture in normalized 0...1 coordinates (origin bottom-left,
 /// like the texture). `.full` is the whole scene.
 struct SceneRegion: Sendable {
@@ -40,8 +49,13 @@ final class MirrorController: @unchecked Sendable {
     // display side by side, each display showing its slice. Written on the main thread,
     // read by the render thread (`ProjectMGLView`) for the canvas size and its own slice.
     private let spanState = Mutex<(canvas: (width: Int, height: Int), main: SceneRegion)?>(nil)
-    private var spanWindows: [MirrorWindow] = [] // main thread
-    private var spanSignature = ""
+    /// Windows showing a slice. `owned` ones were created by span mode and are closed with it;
+    /// the others are mirror windows the user opened on that display, which just get a slice.
+    private var spanWindows: [(key: String, window: MirrorWindow, owned: Bool)] = [] // main thread
+    private var spanStructure = "" // what the windows were built for; a change rebuilds them
+    private var spanTuning = ""    // per-display tuning; a change only moves the slices
+    /// Show `SpanTestPattern` instead of the preset (render thread reads it).
+    let testPattern = Atomic<Bool>(false)
     /// Fired on the main thread when span mode turns on/off, for the menu checkmark.
     var onSpanChanged: ((Bool) -> Void)?
 
@@ -59,7 +73,11 @@ final class MirrorController: @unchecked Sendable {
             DispatchQueue.main.async { self?.relayoutSpan() }
         }
         NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: nil, using: relayout)
-        NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: nil, using: relayout)
+        // Every Settings change lands here, and a slider drag sends dozens a second; a relayout
+        // resizes the scene texture, so run at most one per interval (it reads the latest values).
+        NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: nil) { [weak self] _ in
+            DispatchQueue.main.async { self?.scheduleRelayout() }
+        }
         NotificationCenter.default.addObserver(forName: NSWindow.didChangeScreenNotification, object: nil, queue: nil) { [weak self] n in
             let isMain = (n.object as? NSWindow) === self?.mainView?.window
             if isMain { DispatchQueue.main.async { self?.relayoutSpan() } }
@@ -68,9 +86,22 @@ final class MirrorController: @unchecked Sendable {
 
     @MainActor
     func setSpan(_ on: Bool) {
-        spanSignature = ""
+        spanStructure = ""
+        spanTuning = ""
         guard on else { return endSpan() }
         buildSpan()
+    }
+
+    private var relayoutScheduled = false
+
+    @MainActor
+    private func scheduleRelayout() {
+        guard isSpanning, !relayoutScheduled else { return }
+        relayoutScheduled = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+            self?.relayoutScheduled = false
+            self?.relayoutSpan()
+        }
     }
 
     @MainActor
@@ -82,8 +113,7 @@ final class MirrorController: @unchecked Sendable {
     @MainActor
     private func endSpan() {
         let was = isSpanning
-        spanWindows.forEach { $0.close() }
-        spanWindows = []
+        releaseSpanWindows()
         spanState.withLock { $0 = nil }
         if was { mainView?.reshape() }
         onSpanChanged?(false)
@@ -96,14 +126,17 @@ final class MirrorController: @unchecked Sendable {
     private func buildSpan() {
         let screens = NSScreen.screens.sorted { $0.frame.minX < $1.frame.minX }
         guard let mainView, let mainScreen = mainView.window?.screen, screens.count > 1 else { return endSpan() }
-        let layout = UserDefaults.standard.string(forKey: AppSettingsKeys.spanLayout) ?? "displays"
-        let signature = "\(layout)|\(screens.map(\.frame))|\(mainScreen.frame)"
-        guard signature != spanSignature else { return }
-        spanSignature = signature
-        spanWindows.forEach { $0.close() }
-        spanWindows = []
+        let defaults = UserDefaults.standard
+        let layout = defaults.string(forKey: AppSettingsKeys.spanLayout) ?? "displays"
+        let structure = "\(layout)|\(screens.map(\.frame))|\(mainScreen.frame)|\(screens.map { adoptableMirrors(on: $0).count })"
+        let tuning = screens.map { s in let t = Self.tuning(for: s); return "\(t.scale),\(t.offset)" }.joined(separator: "|")
+            + "|\(Self.physicalFactors(for: screens))"
+        guard structure != spanStructure || tuning != spanTuning else { return }
+        let rebuild = structure != spanStructure
+        spanStructure = structure
+        spanTuning = tuning
 
-        let rects = Self.spanRects(for: screens, layout: layout)
+        let rects = Self.tuned(Self.spanRects(for: screens, layout: layout), screens: screens)
         let bounds = rects.dropFirst().reduce(rects[0]) { $0.union($1) }
         let pixelsPerUnit = zip(screens, rects).map { $0.frame.width * $0.backingScaleFactor / $1.width }.max()!
         let canvas = (width: Int((bounds.width * pixelsPerUnit).rounded()), height: Int((bounds.height * pixelsPerUnit).rounded()))
@@ -114,19 +147,78 @@ final class MirrorController: @unchecked Sendable {
         let mainRegion = slices.first { $0.0 == mainScreen }?.1 ?? .full
         spanState.withLock { $0 = (canvas, mainRegion) }
 
-        if let ctx = mainView.openGLContext {
-            for (screen, region) in slices where screen != mainScreen {
-                let mirror = makeMirror(sharing: ctx)
-                mirror.glView.setRegion(region)
-                mirror.onExitSpan = { [weak self] in self?.setSpan(false) }
-                mirror.setFrameOrigin(screen.frame.origin)
-                mirror.makeKeyAndOrderFront(nil)
-                mirror.enterBorderless(on: screen)
-                spanWindows.append(mirror)
+        if rebuild {
+            releaseSpanWindows()
+            if let ctx = mainView.openGLContext {
+                for (screen, region) in slices where screen != mainScreen {
+                    let existing = adoptableMirrors(on: screen)
+                    for mirror in existing {
+                        mirror.glView.setRegion(region)
+                        spanWindows.append((screen.spanKey, mirror, false))
+                    }
+                    if existing.isEmpty {
+                        // No mirror window on this display yet: make a fullscreen one.
+                        let mirror = makeMirror(sharing: ctx)
+                        mirror.glView.setRegion(region)
+                        mirror.onExitSpan = { [weak self] in self?.setSpan(false) }
+                        mirror.setFrameOrigin(screen.frame.origin)
+                        mirror.makeKeyAndOrderFront(nil)
+                        mirror.enterBorderless(on: screen)
+                        spanWindows.append((screen.spanKey, mirror, true))
+                    }
+                }
             }
+        } else {
+            // Only the tuning changed (e.g. a slider is moving): keep the windows, move the slices.
+            let regions = Dictionary(slices.map { ($0.0.spanKey, $0.1) }, uniquingKeysWith: { first, _ in first })
+            for (key, window, _) in spanWindows { if let region = regions[key] { window.glView.setRegion(region) } }
         }
         mainView.reshape() // re-sizes the scene to the canvas
         onSpanChanged?(true)
+    }
+
+    /// A display's span tuning from Settings: picture size (1 = as laid out) and vertical shift.
+    private static func tuning(for screen: NSScreen) -> (scale: Double, offset: Double) {
+        let defaults = UserDefaults.standard
+        let scale = defaults.double(forKey: AppSettingsKeys.spanScaleKey(screen.spanKey))
+        let offset = defaults.double(forKey: AppSettingsKeys.spanOffsetKey(screen.spanKey))
+        return (scale > 0 ? min(max(scale, 0.5), 2) : 1, min(max(offset, -0.5), 0.5))
+    }
+
+    /// How many canvas units each display must cover for things to be the same physical size
+    /// on all of them, from the size each display reports (EDID). A display whose points are
+    /// physically bigger covers more of the canvas (its picture comes out smaller): the
+    /// reference is the display with the smallest points and gets 1. All 1 when the setting
+    /// is off or any display doesn't report a size (some projectors and TVs don't).
+    private static func physicalFactors(for screens: [NSScreen]) -> [Double] {
+        let none = screens.map { _ in 1.0 }
+        guard UserDefaults.standard.bool(forKey: AppSettingsKeys.spanPhysicalSize) else { return none }
+        let key = NSDeviceDescriptionKey("NSScreenNumber")
+        let mmPerPoint = screens.map { screen -> Double in
+            let id = (screen.deviceDescription[key] as? NSNumber)?.uint32Value ?? 0
+            return CGDisplayScreenSize(id).width / screen.frame.width
+        }
+        guard mmPerPoint.allSatisfy({ $0 > 0 }), let reference = mmPerPoint.min() else { return none }
+        return mmPerPoint.map { $0 / reference }
+    }
+
+    /// Applies each display's real-size factor and its tuning to its rectangle. Picture size
+    /// below 1 makes a display cover more of the canvas (so its content looks smaller). A
+    /// rectangle grows away from the seam, from the edge facing the middle of the arrangement,
+    /// so it keeps touching its neighbour; vertically it grows upward from its bottom edge
+    /// (displays usually share a bottom line, which is how macOS arranges them by default),
+    /// then shifts by `offset`. (With three or more displays the middle ones can overlap a
+    /// neighbour slightly.)
+    private static func tuned(_ rects: [CGRect], screens: [NSScreen]) -> [CGRect] {
+        let middle = rects.dropFirst().reduce(rects[0]) { $0.union($1) }.midX
+        let physical = physicalFactors(for: screens)
+        return zip(zip(screens, rects), physical).map { pair, factor in
+            let (screen, r) = pair
+            let t = tuning(for: screen)
+            let size = CGSize(width: r.width * factor / t.scale, height: r.height * factor / t.scale)
+            let x = r.midX < middle ? r.maxX - size.width : r.minX
+            return CGRect(origin: CGPoint(x: x, y: r.minY + t.offset * r.height), size: size)
+        }
     }
 
     /// One rectangle per screen (y up), in a unit shared by all of them.
@@ -149,6 +241,20 @@ final class MirrorController: @unchecked Sendable {
         }
     }
 
+    /// Closes the windows span mode made and gives the others their whole picture back.
+    private func releaseSpanWindows() {
+        for (_, window, owned) in spanWindows {
+            if owned { window.close() } else { window.glView.setRegion(.full) }
+        }
+        spanWindows = []
+    }
+
+    /// Mirror windows the user opened that are on `screen`.
+    @MainActor
+    private func adoptableMirrors(on screen: NSScreen) -> [MirrorWindow] {
+        windows.withLock { $0 }.filter { $0.onExitSpan == nil && $0.screen?.spanKey == screen.spanKey }
+    }
+
     @MainActor
     private func makeMirror(sharing ctx: NSOpenGLContext) -> MirrorWindow {
         let mirror = MirrorWindow(sharing: ctx)
@@ -156,7 +262,11 @@ final class MirrorController: @unchecked Sendable {
             forName: NSWindow.willCloseNotification, object: mirror, queue: .main
         ) { [weak self, weak mirror] _ in
             self?.windows.withLock { list in list.removeAll { $0 === mirror } }
+            self?.relayoutSpan() // a display may need its own window again
         }
+        NotificationCenter.default.addObserver(
+            forName: NSWindow.didChangeScreenNotification, object: mirror, queue: .main
+        ) { [weak self] _ in self?.relayoutSpan() }
         windows.withLock { $0.append(mirror) }
         return mirror
     }

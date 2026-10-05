@@ -37,6 +37,7 @@ final class ProjectMGLView: NSOpenGLView {
     // Sized to the view's backing size; created/resized/read only under the context lock.
     private var sceneTexture: GLuint = 0
     private var sceneFramebuffer: GLuint = 0
+    private var projectMSize = (0, 0) // what projectM was last told, to skip redundant resizes
     private var appliedRenderScale = 1.0 // main thread (reshape)
     private var sceneSize: (width: GLsizei, height: GLsizei) = (0, 0)
     // HDR output only (nil otherwise): boosts highlights while drawing the texture to the window.
@@ -115,7 +116,10 @@ final class ProjectMGLView: NSOpenGLView {
         let w = max(1, Int(Double(base.width) * scale * fit))
         let h = max(1, Int(Double(base.height) * scale * fit))
         resizeSceneTarget(width: GLsizei(w), height: GLsizei(h))
-        projectm_set_window_size(pm, w, h)
+        if projectMSize != (w, h) {
+            projectMSize = (w, h)
+            projectm_set_window_size(pm, w, h)
+        }
     }
 
     /// Scene pixels per window pixel (Settings); the window blit and mirrors scale the
@@ -186,7 +190,12 @@ final class ProjectMGLView: NSOpenGLView {
                 stats.audioCapacityFrames = capacityFrames
             }
         }
-        projectm_opengl_render_frame_fbo(pm, sceneFramebuffer)
+        if coordinator.mirrorController.testPattern.load(ordering: .relaxed) {
+            drawTestPattern()
+        } else {
+            patternSize = (0, 0)
+            projectm_opengl_render_frame_fbo(pm, sceneFramebuffer)
+        }
         let backing = convertToBacking(bounds)
         // The whole scene, or this window's slice of it while spanning displays.
         let src = coordinator.mirrorController.mainRegion.fillRect(
@@ -219,6 +228,20 @@ final class ProjectMGLView: NSOpenGLView {
         coordinator.mirrorController.draw(texture: sceneTexture, width: sceneSize.width, height: sceneSize.height,
                                           gain: coordinator.hdrGain.value)
         ctx.unlock()
+    }
+
+    private var patternSize: (width: GLsizei, height: GLsizei) = (0, 0)
+
+    /// Puts `SpanTestPattern` on the scene texture instead of rendering the preset. The
+    /// texture only needs writing when the pattern is first shown or the scene is resized.
+    private func drawTestPattern() {
+        guard patternSize != sceneSize else { return }
+        patternSize = sceneSize
+        let pixels = SpanTestPattern.rgba(width: Int(sceneSize.width), height: Int(sceneSize.height))
+        glBindTexture(GLenum(GL_TEXTURE_2D), sceneTexture)
+        glTexSubImage2D(GLenum(GL_TEXTURE_2D), 0, 0, 0, sceneSize.width, sceneSize.height,
+                        GLenum(GL_RGBA), GLenum(GL_UNSIGNED_BYTE), pixels)
+        glBindTexture(GLenum(GL_TEXTURE_2D), 0)
     }
 
     /// Allocates the fixed-size offscreen target `readFramebufferPixels` blits into.

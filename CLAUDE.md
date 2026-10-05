@@ -162,10 +162,22 @@ must only happen on the main thread.
   `frame.minX`, so nothing is cropped or empty; `arrangement` uses the `NSScreen` frames from
   System Settings (vertical offsets and gaps honoured, uncovered canvas not shown). Either way
   the canvas is the bounding box at the sharpest display's pixel density, and points are not
-  physical sizes (no mm-based layout; judged not worth it). The main
+  physical sizes (no mm-based layout; judged not worth it). Span mode
+  adopts the mirror windows the user opened on each other display (workflow: open mirrors,
+  fullscreen them, fullscreen the main window, then span; `releaseSpanWindows` gives adopted
+  windows their whole picture back) and only creates its own borderless window for a display
+  with none. Per-display sizing (Settings > Span tuning, keyed by `NSScreen.spanKey`, a
+  display UUID), applied in `tuned(_:screens:)`: first an automatic real-size factor
+  (`physicalFactors`, from each display's reported EDID width per point, reference = the
+  display with the smallest points; off via `spanPhysicalSize`, skipped if any display reports
+  no size), then the user's picture size and vertical shift on top. Slices grow away from the
+  seam horizontally and upward from the bottom edge vertically (arrangements are
+  bottom-aligned by default; growing about the centre made a 90% size need a +5% shift); a tuning-only change moves slices without rebuilding windows. The main
   window draws its own slice (`ProjectMGLView` reads `mirrorController.mainRegion`/`spanCanvas`
   under the context lock), other displays get borderless span mirrors that `F` closes. Re-sliced
-  when displays or the main window's display change. Earlier
+  when displays or the main window's display change. Display > Span Test Pattern
+  (`SpanTestPattern`) replaces the preset on the scene texture with a grid and corner-to-corner
+  diagonals, to judge seam alignment by eye through the exact same canvas/slice path. Earlier
   attempts at screen-bound overlay windows either covered the display or sank behind
   other apps, so don't go back to that.
 

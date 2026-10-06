@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 import Synchronization
 
 extension NSScreen {
@@ -44,6 +45,8 @@ struct SceneRegion: Sendable {
 final class MirrorController: @unchecked Sendable {
     private let windows = Mutex<[MirrorWindow]>([])
     private weak var mainView: ProjectMGLView?
+    /// For the keys mirror windows share with the main window (set by `AppCoordinator`).
+    weak var coordinator: AppCoordinator?
 
     // Span mode (Display > Span Across Displays): the scene is one canvas covering every
     // display side by side, each display showing its slice. Written on the main thread,
@@ -52,8 +55,11 @@ final class MirrorController: @unchecked Sendable {
     /// Windows showing a slice. `owned` ones were created by span mode and are closed with it;
     /// the others are mirror windows the user opened on that display, which just get a slice.
     private var spanWindows: [(key: String, window: MirrorWindow, owned: Bool)] = [] // main thread
-    private var spanStructure = "" // what the windows were built for; a change rebuilds them
-    private var spanTuning = ""    // per-display tuning; a change only moves the slices
+    private var spanSignature = "" // everything the slices depend on; a change re-slices
+    /// Displays whose window the user closed while spanning: no new window is made there
+    /// until span mode is turned off and on again.
+    private var spanDeclined: Set<String> = []
+    private var isReleasingSpanWindows = false
     /// Show `SpanTestPattern` instead of the preset (render thread reads it).
     let testPattern = Atomic<Bool>(false)
     /// Fired on the main thread when span mode turns on/off, for the menu checkmark.
@@ -76,7 +82,10 @@ final class MirrorController: @unchecked Sendable {
         // Every Settings change lands here, and a slider drag sends dozens a second; a relayout
         // resizes the scene texture, so run at most one per interval (it reads the latest values).
         NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: nil) { [weak self] _ in
-            DispatchQueue.main.async { self?.scheduleRelayout() }
+            DispatchQueue.main.async {
+                self?.scheduleRelayout()
+                self?.syncMirrorFullscreen()
+            }
         }
         NotificationCenter.default.addObserver(forName: NSWindow.didChangeScreenNotification, object: nil, queue: nil) { [weak self] n in
             let isMain = (n.object as? NSWindow) === self?.mainView?.window
@@ -86,13 +95,99 @@ final class MirrorController: @unchecked Sendable {
 
     @MainActor
     func setSpan(_ on: Bool) {
-        spanStructure = ""
-        spanTuning = ""
+        spanSignature = ""
+        spanDeclined = []
         guard on else { return endSpan() }
         buildSpan()
     }
 
     private var relayoutScheduled = false
+
+    // Borderless fullscreen for the main window. It's a SwiftUI window, so it can't be turned
+    // into a borderless one that still gets keys, and a titled window can't cover the notch.
+    // Instead a borderless mirror window covers its display, showing the main window's slice
+    // of the scene (all of it unless spanning), and the main window stays underneath.
+    private var mainCover: MirrorWindow?
+    private var isLeavingMainNativeFullscreen = false
+
+    /// Whether Esc should leave fullscreen rather than close the window: the window is
+    /// fullscreen, or it's the main window with the borderless cover up (the main window can
+    /// be the key one under it, e.g. right after launch).
+    @MainActor
+    func isFullscreen(_ window: NSWindow?) -> Bool {
+        guard let window else { return false }
+        return window.isVisualizerFullscreen || (mainCover != nil && (window === mainView?.window || window === mainCover))
+    }
+
+    /// F, double-click and Esc in any visualizer window.
+    @MainActor
+    func toggleFullscreen(of window: NSWindow?) {
+        guard let window else { return }
+        if window === mainView?.window || window === mainCover { toggleMainFullscreen() } else { window.toggleFullScreen(nil) }
+    }
+
+    /// Borderless for the main window ("all windows" in Settings).
+    private var mainWantsBorderless: Bool { AppSettingsKeys.borderlessForMain }
+
+    /// Main window fullscreen: native, or borderless per the settings.
+    @MainActor
+    func toggleMainFullscreen() {
+        guard let main = mainView?.window else { return }
+        if mainCover != nil {
+            closeMainCover()
+        } else if main.styleMask.contains(.fullScreen) {
+            main.toggleFullScreen(nil)
+        } else if mainWantsBorderless, let screen = main.screen, let ctx = mainView?.openGLContext {
+            let cover = makeMirror(sharing: ctx)
+            cover.isMainCover = true
+            cover.onToggleFullscreen = { [weak self] in MainActor.assumeIsolated { self?.toggleMainFullscreen() } }
+            cover.glView.setRegion(mainRegion)
+            cover.setFrameOrigin(screen.frame.origin)
+            cover.makeKeyAndOrderFront(nil)
+            cover.enterBorderless(on: screen)
+            if let coordinator { cover.showOverlays(of: coordinator) }
+            NSApp.activate() // at launch the app may not be active yet, and keys would go nowhere
+            mainCover = cover
+        } else {
+            main.toggleFullScreen(nil)
+        }
+    }
+
+    @MainActor
+    private func closeMainCover() {
+        guard let cover = mainCover else { return }
+        mainCover = nil
+        cover.close()
+    }
+
+    /// The main window follows the borderless setting too when it is flipped while fullscreen.
+    @MainActor
+    private func syncMainFullscreen() {
+        guard let main = mainView?.window, !isLeavingMainNativeFullscreen else { return }
+        let wantBorderless = mainWantsBorderless
+        if wantBorderless, main.styleMask.contains(.fullScreen) {
+            isLeavingMainNativeFullscreen = true
+            var token: NSObjectProtocol?
+            token = NotificationCenter.default.addObserver(forName: NSWindow.didExitFullScreenNotification, object: main, queue: .main) { [weak self] _ in
+                if let token { NotificationCenter.default.removeObserver(token) }
+                MainActor.assumeIsolated {
+                    self?.isLeavingMainNativeFullscreen = false
+                    self?.toggleMainFullscreen() // not native any more, so this opens the cover
+                }
+            }
+            main.toggleFullScreen(nil)
+        } else if !wantBorderless, mainCover != nil {
+            closeMainCover()
+            main.toggleFullScreen(nil)
+        }
+    }
+
+    /// Applies the borderless-fullscreen setting to mirrors that are already fullscreen.
+    @MainActor
+    private func syncMirrorFullscreen() {
+        windows.withLock { $0 }.forEach { $0.syncFullscreenMode() }
+        syncMainFullscreen()
+    }
 
     @MainActor
     private func scheduleRelayout() {
@@ -115,6 +210,7 @@ final class MirrorController: @unchecked Sendable {
         let was = isSpanning
         releaseSpanWindows()
         spanState.withLock { $0 = nil }
+        mainCover?.glView.setRegion(.full)
         if was { mainView?.reshape() }
         onSpanChanged?(false)
     }
@@ -128,13 +224,11 @@ final class MirrorController: @unchecked Sendable {
         guard let mainView, let mainScreen = mainView.window?.screen, screens.count > 1 else { return endSpan() }
         let defaults = UserDefaults.standard
         let layout = defaults.string(forKey: AppSettingsKeys.spanLayout) ?? "displays"
-        let structure = "\(layout)|\(screens.map(\.frame))|\(mainScreen.frame)|\(screens.map { adoptableMirrors(on: $0).count })"
         let tuning = screens.map { s in let t = Self.tuning(for: s); return "\(t.scale),\(t.offset)" }.joined(separator: "|")
-            + "|\(Self.physicalFactors(for: screens))"
-        guard structure != spanStructure || tuning != spanTuning else { return }
-        let rebuild = structure != spanStructure
-        spanStructure = structure
-        spanTuning = tuning
+        let adoptable = screens.map { adoptableMirrors(on: $0).map { ObjectIdentifier($0).hashValue } }
+        let signature = "\(layout)|\(screens.map(\.frame))|\(mainScreen.frame)|\(tuning)|\(Self.physicalFactors(for: screens))|\(adoptable)|\(spanDeclined.sorted())"
+        guard signature != spanSignature else { return }
+        spanSignature = signature
 
         let rects = Self.tuned(Self.spanRects(for: screens, layout: layout), screens: screens)
         let bounds = rects.dropFirst().reduce(rects[0]) { $0.union($1) }
@@ -146,33 +240,39 @@ final class MirrorController: @unchecked Sendable {
         }
         let mainRegion = slices.first { $0.0 == mainScreen }?.1 ?? .full
         spanState.withLock { $0 = (canvas, mainRegion) }
+        mainCover?.glView.setRegion(mainRegion)
 
-        if rebuild {
-            releaseSpanWindows()
-            if let ctx = mainView.openGLContext {
-                for (screen, region) in slices where screen != mainScreen {
-                    let existing = adoptableMirrors(on: screen)
-                    for mirror in existing {
-                        mirror.glView.setRegion(region)
-                        spanWindows.append((screen.spanKey, mirror, false))
-                    }
-                    if existing.isEmpty {
-                        // No mirror window on this display yet: make a fullscreen one.
-                        let mirror = makeMirror(sharing: ctx)
-                        mirror.glView.setRegion(region)
-                        mirror.onExitSpan = { [weak self] in self?.setSpan(false) }
-                        mirror.setFrameOrigin(screen.frame.origin)
-                        mirror.makeKeyAndOrderFront(nil)
-                        mirror.enterBorderless(on: screen)
-                        spanWindows.append((screen.spanKey, mirror, true))
-                    }
+        // Give every other display a window showing its slice: the user's own mirror if it has
+        // one, else one of ours (unless they closed it), keeping ours across re-slices.
+        let old = spanWindows
+        var windowsNow: [(key: String, window: MirrorWindow, owned: Bool)] = []
+        for (screen, region) in slices where screen != mainScreen {
+            let key = screen.spanKey
+            let theirs = adoptableMirrors(on: screen)
+            let ours = old.first { $0.key == key && $0.owned }
+            if !theirs.isEmpty {
+                if let ours { closeSpanWindow(ours.window) }
+                for mirror in theirs {
+                    mirror.glView.setRegion(region)
+                    windowsNow.append((key, mirror, false))
                 }
+            } else if let ours {
+                ours.window.glView.setRegion(region)
+                windowsNow.append(ours)
+            } else if !spanDeclined.contains(key), let ctx = mainView.openGLContext {
+                let mirror = makeMirror(sharing: ctx)
+                mirror.isSpanOwned = true
+                mirror.glView.setRegion(region)
+                mirror.setFrameOrigin(screen.frame.origin)
+                mirror.makeKeyAndOrderFront(nil)
+                mirror.toggleFullScreen(nil) // borderless or native, like any mirror, per the setting
+                windowsNow.append((key, mirror, true))
             }
-        } else {
-            // Only the tuning changed (e.g. a slider is moving): keep the windows, move the slices.
-            let regions = Dictionary(slices.map { ($0.0.spanKey, $0.1) }, uniquingKeysWith: { first, _ in first })
-            for (key, window, _) in spanWindows { if let region = regions[key] { window.glView.setRegion(region) } }
         }
+        for entry in old where !windowsNow.contains(where: { $0.window === entry.window }) {
+            if entry.owned { closeSpanWindow(entry.window) } else { entry.window.glView.setRegion(.full) }
+        }
+        spanWindows = windowsNow
         mainView.reshape() // re-sizes the scene to the canvas
         onSpanChanged?(true)
     }
@@ -242,27 +342,49 @@ final class MirrorController: @unchecked Sendable {
     }
 
     /// Closes the windows span mode made and gives the others their whole picture back.
+    @MainActor
     private func releaseSpanWindows() {
         for (_, window, owned) in spanWindows {
-            if owned { window.close() } else { window.glView.setRegion(.full) }
+            if owned { closeSpanWindow(window) } else { window.glView.setRegion(.full) }
         }
         spanWindows = []
+    }
+
+    /// Closing a window ourselves must not count as the user closing it.
+    @MainActor
+    private func closeSpanWindow(_ window: MirrorWindow) {
+        isReleasingSpanWindows = true
+        window.close()
+        isReleasingSpanWindows = false
     }
 
     /// Mirror windows the user opened that are on `screen`.
     @MainActor
     private func adoptableMirrors(on screen: NSScreen) -> [MirrorWindow] {
-        windows.withLock { $0 }.filter { $0.onExitSpan == nil && $0.screen?.spanKey == screen.spanKey }
+        windows.withLock { $0 }.filter { !$0.isSpanOwned && !$0.isMainCover && $0.screen?.spanKey == screen.spanKey }
     }
 
     @MainActor
     private func makeMirror(sharing ctx: NSOpenGLContext) -> MirrorWindow {
         let mirror = MirrorWindow(sharing: ctx)
+        mirror.glView.onKeyDown = { [weak self, weak mirror] event in
+            MainActor.assumeIsolated {
+                guard let coordinator = self?.coordinator else { return false }
+                return handleVisualizerKey(event, in: mirror, coordinator: coordinator)
+            }
+        }
         NotificationCenter.default.addObserver(
             forName: NSWindow.willCloseNotification, object: mirror, queue: .main
         ) { [weak self, weak mirror] _ in
-            self?.windows.withLock { list in list.removeAll { $0 === mirror } }
-            self?.relayoutSpan() // a display may need its own window again
+            guard let self else { return }
+            self.windows.withLock { list in list.removeAll { $0 === mirror } }
+            self.spanWindows.removeAll { $0.window === mirror }
+            if mirror?.isMainCover == true {
+                self.mainCover = nil
+            } else if self.isSpanning, !self.isReleasingSpanWindows, let key = mirror?.screen?.spanKey {
+                self.spanDeclined.insert(key) // closed on purpose: don't make another there
+            }
+            self.scheduleRelayout()
         }
         NotificationCenter.default.addObserver(
             forName: NSWindow.didChangeScreenNotification, object: mirror, queue: .main
@@ -310,32 +432,102 @@ private final class MirrorWindow: NSWindow {
         center()
     }
 
-    /// Set on span-mode windows: leaving fullscreen there means leaving span mode.
-    var onExitSpan: (() -> Void)?
+    /// Made by span mode (not opened by the user): otherwise an ordinary mirror, it follows the
+    /// borderless setting too; the only difference is that span mode closes it.
+    var isSpanOwned = false
+    /// Covers the main window's display in borderless mode (see `MirrorController.toggleMainFullscreen`).
+    var isMainCover = false
+    private var overlayWindow: NSWindow?
+
+    /// Puts the main window's overlays (debug, loading, audio error) over the scene, for the
+    /// cover. A transparent child window rather than a subview: a view over an `NSOpenGLView`
+    /// ends up under its surface. Call once the cover has its final frame.
+    func showOverlays(of coordinator: AppCoordinator) {
+        let overlay = NSWindow(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false)
+        overlay.isReleasedWhenClosed = false
+        overlay.backgroundColor = .clear
+        overlay.isOpaque = false
+        overlay.hasShadow = false
+        overlay.ignoresMouseEvents = true // clicks and keys stay with the cover
+        // The hosting view goes inside a plain view: as the content view itself it would resize
+        // the window to fit its content, and the window must span the whole cover.
+        let container = NSView(frame: NSRect(origin: .zero, size: frame.size))
+        container.wantsLayer = true
+        let hosting = NSHostingView(rootView: VisualizerOverlays(coordinator: coordinator))
+        hosting.frame = container.bounds
+        hosting.autoresizingMask = [.width, .height]
+        container.addSubview(hosting)
+        overlay.contentView = container
+        overlay.setFrame(frame, display: true)
+        addChildWindow(overlay, ordered: .above)
+        overlayWindow = overlay
+    }
+
+    override func close() {
+        overlayWindow?.close()
+        overlayWindow = nil
+        super.close()
+    }
+
+    /// Set on the main cover: what double-click, the View menu and the like should do instead.
+    var onToggleFullscreen: (() -> Void)?
+
+    /// True between asking a native-fullscreen window to leave and it having left, so a second
+    /// settings change in that window of time doesn't toggle it back in.
+    private var isLeavingNativeFullscreen = false
 
     /// Set while in borderless fullscreen: what to put back on exit.
     private var borderless: (frame: NSRect, style: NSWindow.StyleMask, level: NSWindow.Level)?
+    var isBorderless: Bool { borderless != nil }
 
-    // A borderless window refuses key status by default, which would kill the F key.
+    // A borderless window refuses key status by default, which would kill the keys.
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }
 
     /// With the "borderless fullscreen" setting: a plain window covering the whole screen
     /// frame (menu bar, Dock and notch area included) instead of a native Space.
     override func toggleFullScreen(_ sender: Any?) {
-        if let onExitSpan {
-            onExitSpan()
-        } else if let saved = borderless {
-            borderless = nil
-            styleMask = saved.style
-            level = saved.level
-            setFrame(saved.frame, display: true)
-            makeFirstResponder(glView)
-        } else if UserDefaults.standard.bool(forKey: AppSettingsKeys.borderlessFullscreen),
+        if let onToggleFullscreen { // the main cover: leaving it closes it, it isn't a window to keep
+            onToggleFullscreen()
+        } else if borderless != nil {
+            leaveBorderless()
+        } else if AppSettingsKeys.borderlessForMirrors,
                   !styleMask.contains(.fullScreen), let screen {
             enterBorderless(on: screen)
         } else {
             super.toggleFullScreen(sender)
+        }
+    }
+
+    private func leaveBorderless() {
+        guard let saved = borderless else { return }
+        borderless = nil
+        styleMask = saved.style
+        level = saved.level
+        setFrame(saved.frame, display: true)
+        makeFirstResponder(glView)
+    }
+
+    /// Makes an already fullscreen window follow the "borderless fullscreen" setting, so
+    /// flipping it takes effect on open mirrors, not just the next time `F` is pressed.
+    /// The main cover is left alone (the controller handles the main window).
+    func syncFullscreenMode() {
+        guard !isMainCover, !isLeavingNativeFullscreen else { return }
+        let wantBorderless = AppSettingsKeys.borderlessForMirrors
+        if wantBorderless, styleMask.contains(.fullScreen) {
+            // Leave the native Space first; once it has finished, fill the screen without one.
+            isLeavingNativeFullscreen = true
+            var token: NSObjectProtocol?
+            token = NotificationCenter.default.addObserver(forName: NSWindow.didExitFullScreenNotification, object: self, queue: .main) { [weak self] _ in
+                if let token { NotificationCenter.default.removeObserver(token) }
+                guard let self else { return }
+                self.isLeavingNativeFullscreen = false
+                if let screen = self.screen { self.enterBorderless(on: screen) }
+            }
+            super.toggleFullScreen(nil)
+        } else if !wantBorderless, borderless != nil {
+            leaveBorderless()
+            super.toggleFullScreen(nil)
         }
     }
 
@@ -344,6 +536,7 @@ private final class MirrorWindow: NSWindow {
         styleMask = .borderless
         level = .mainMenu + 1
         setFrame(screen.frame, display: true)
+        makeKeyAndOrderFront(nil) // a borderless window isn't key by default; without it keys go elsewhere
         makeFirstResponder(glView) // changing styleMask drops first responder, so F would go nowhere
     }
 
@@ -395,13 +588,12 @@ private final class MirrorGLView: NSOpenGLView {
         if event.clickCount == 2 { window?.toggleFullScreen(nil) } else { super.mouseDown(with: event) }
     }
 
+    /// Set by `MirrorController`; the same key handling as the main window.
+    var onKeyDown: ((NSEvent) -> Bool)?
+
     override func keyDown(with event: NSEvent) {
         cursorHider.poke(self)
-        if event.charactersIgnoringModifiers?.lowercased() == "f" {
-            window?.toggleFullScreen(nil)
-        } else {
-            super.keyDown(with: event)
-        }
+        if onKeyDown?(event) != true { super.keyDown(with: event) }
     }
 
     override func reshape() {

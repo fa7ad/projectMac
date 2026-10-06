@@ -7,6 +7,7 @@ struct projectMacApp: App {
     @State private var presetMenu: PresetMenu?
 
     init() {
+        AppSettingsKeys.migrateBorderlessSetting()
         UserDefaults.standard.register(defaults: AppSettingsKeys.defaults)
         // A second window would attach a second PresetManager to the one coordinator and
         // race the first's GL context. Single `Window` scene above, no tabs here.
@@ -119,16 +120,7 @@ private struct VisualizerContent: View {
         ZStack(alignment: .topLeading) {
             ProjectMViewRepresentable(coordinator: coordinator)
                 .ignoresSafeArea()
-            if coordinator.renderStats.isLoadingFirstPreset {
-                LoadingOverlayView()
-            }
-            if coordinator.renderStats.isDebugOverlayVisible {
-                DebugOverlayView(stats: coordinator.renderStats)
-            }
-            if let audioError = coordinator.renderStats.audioError {
-                AudioErrorBannerView(message: audioError)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-            }
+            VisualizerOverlays(coordinator: coordinator)
         }
     }
 }

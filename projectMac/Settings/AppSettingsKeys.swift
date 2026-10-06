@@ -12,7 +12,21 @@ enum AppSettingsKeys {
     static let oscDestination = "oscDestination"
     static let hdrEnabled = "hdrEnabled" // read once at launch (pixel format)
     static let hdrGain = "hdrGain"
-    static let borderlessFullscreen = "borderlessFullscreen" // read at toggle time
+    /// "off" | "others" (mirror and span windows) | "all" (the main window too); read at toggle time.
+    static let borderlessMode = "borderlessMode"
+    static var borderlessForMirrors: Bool { UserDefaults.standard.string(forKey: borderlessMode) != "off" }
+    static var borderlessForMain: Bool { UserDefaults.standard.string(forKey: borderlessMode) == "all" }
+
+    /// Replaces the two older settings ("borderlessFullscreen" plus "borderlessMainWindow") with
+    /// the one above, keeping what the user had. Run before the defaults are registered.
+    static func migrateBorderlessSetting() {
+        let defaults = UserDefaults.standard
+        guard defaults.object(forKey: borderlessMode) == nil,
+              let old = defaults.object(forKey: "borderlessFullscreen") as? Bool else { return }
+        let includesMain = defaults.object(forKey: "borderlessMainWindow") as? Bool ?? true
+        defaults.set(old ? (includesMain ? "all" : "others") : "off", forKey: borderlessMode)
+    }
+    static let fullscreenOnLaunch = "fullscreenOnLaunch" // read once at launch
     static let hideIdleCursor = "hideIdleCursor" // read at each mouse event
     static let hideCursorDelay = "hideCursorDelay" // seconds
     static let spanLayout = "spanLayout" // "displays" | "arrangement"
@@ -34,10 +48,11 @@ enum AppSettingsKeys {
         oscDestination: defaultOSCDestination,
         hdrEnabled: false,
         hdrGain: 2.0,
-        borderlessFullscreen: false,
+        borderlessMode: "off",
         renderScale: 1.0,
         spanLayout: "displays",
         spanPhysicalSize: true,
+        fullscreenOnLaunch: false,
         hideIdleCursor: true,
         hideCursorDelay: 2.5,
     ]}

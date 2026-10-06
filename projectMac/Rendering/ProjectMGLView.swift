@@ -37,6 +37,7 @@ final class ProjectMGLView: NSOpenGLView {
     // Sized to the view's backing size; created/resized/read only under the context lock.
     private var sceneTexture: GLuint = 0
     private var sceneFramebuffer: GLuint = 0
+    private var didApplyLaunchFullscreen = false
     private var projectMSize = (0, 0) // what projectM was last told, to skip redundant resizes
     private var appliedRenderScale = 1.0 // main thread (reshape)
     private var sceneSize: (width: GLsizei, height: GLsizei) = (0, 0)
@@ -100,6 +101,22 @@ final class ProjectMGLView: NSOpenGLView {
         super.viewDidMoveToWindow()
         if HDR.isActive { window?.colorSpace = .extendedSRGB }
         window?.makeFirstResponder(self)
+        // The View menu's "Enter Full Screen" and the green button both send toggleFullScreen:
+        // (the menu item down the responder chain, which reaches this view first), so they
+        // follow the borderless setting like F and double-click do.
+        if let zoom = window?.standardWindowButton(.zoomButton) {
+            zoom.target = self
+            zoom.action = #selector(toggleFullScreen(_:))
+        }
+        if !didApplyLaunchFullscreen, let window {
+            didApplyLaunchFullscreen = true
+            if UserDefaults.standard.bool(forKey: AppSettingsKeys.fullscreenOnLaunch) {
+                // After the window is on screen; fullscreening from inside the view setup is ignored.
+                DispatchQueue.main.async { [weak self] in
+                    if !window.styleMask.contains(.fullScreen) { MainActor.assumeIsolated { self?.coordinator.mirrorController.toggleMainFullscreen() } }
+                }
+            }
+        }
     }
 
     private func updateWindowSize() {
@@ -307,42 +324,22 @@ final class ProjectMGLView: NSOpenGLView {
 
     override func mouseMoved(with event: NSEvent) { cursorHider.poke(self) }
 
+    @objc func toggleFullScreen(_ sender: Any?) {
+        coordinator.mirrorController.toggleMainFullscreen()
+    }
+
     override func mouseDown(with event: NSEvent) {
         cursorHider.poke(self)
         guard event.clickCount == 2 else {
             super.mouseDown(with: event)
             return
         }
-        window?.toggleFullScreen(nil)
+        coordinator.mirrorController.toggleFullscreen(of: window)
     }
 
     override func keyDown(with event: NSEvent) {
         cursorHider.poke(self)
-        switch event.charactersIgnoringModifiers?.lowercased() {
-        case "n":
-            coordinator.nextPreset()
-        case "p":
-            coordinator.prevPreset()
-        case "r":
-            coordinator.randomPreset()
-        case "f":
-            window?.toggleFullScreen(nil)
-        case "d":
-            coordinator.renderStats.isDebugOverlayVisible.toggle()
-        case "q":
-            NSApp.terminate(nil)
-        case "\u{1b}": // Escape
-            window?.performClose(nil)
-        default:
-            switch event.specialKey {
-            case .rightArrow:
-                coordinator.nextPreset()
-            case .leftArrow:
-                coordinator.prevPreset()
-            default:
-                super.keyDown(with: event)
-            }
-        }
+        if !handleVisualizerKey(event, in: window, coordinator: coordinator) { super.keyDown(with: event) }
     }
 
     /// `isolated` so teardown can touch main-actor state without an `unsafe` opt-out. A

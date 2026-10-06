@@ -31,7 +31,7 @@ Components:
   diagnostics (peak level, ring-buffer backlog/overflow)
 - Span across displays: one picture spread over all your displays, each window showing its slice. Open a mirror window on each other display (Display > New Mirror Window) and fullscreen it, fullscreen the main window, then turn on Display > Span Across Displays. The layout can follow your System Settings arrangement, each display's picture size and vertical position can be trimmed in Settings, and Display > Span Test Pattern shows a grid to line them up by eye
 - Fullscreen (`F`, or a double-click on the visualization); it resizes with the window.
-  Mirror windows can instead use a borderless fullscreen that covers the notch (Settings). The cursor hides after a configurable idle time in fullscreen (Settings)
+  With the Borderless fullscreen setting (off, mirrors and span windows only, or all windows), windows instead fill the whole screen, notch included. The cursor hides after a configurable idle time in fullscreen (Settings)
 - Optional scene stream: broadcasts tempo (both audio-beat-derived and, separately,
   visual-onset-derived, since a preset's on-screen cut rate doesn't always track the
   song's BPM), dominant color (vibrant/muted/average swatches, HSV), brightness,
@@ -41,8 +41,8 @@ Components:
 
 ## Settings
 
-⌘, opens the Settings window: mesh quality, render scale (50–200% of the window's pixels), HDR output, borderless
-mirror fullscreen, cursor auto-hide, beat sensitivity, preset duration, shuffle, and the scene-stream
+⌘, opens the Settings window, in tabs (General, Displays, Audio & Presets, Scene Stream): mesh quality, render scale (50–200% of the window's pixels), HDR output, borderless
+mirror fullscreen, fullscreen on launch, cursor auto-hide, beat sensitivity, preset duration, shuffle, and the scene-stream
 broadcast toggle and destination — all applied live, except HDR output, which needs a
 restart.
 
@@ -80,11 +80,13 @@ since a preset's on-screen cut rate doesn't always track the song's BPM.
 | `P` / `←` | Previous preset |
 | `R` | Random preset (works regardless of the shuffle setting) |
 | `F` | Toggle fullscreen |
+| `Z` | Toggle span across displays |
 | `D` | Toggle on-screen debug overlay |
-| `Escape` | Close window |
+| `Escape` | Leave fullscreen, or close the window if it isn't fullscreen |
 | `Q` | Quit |
 
-Double-clicking the visualization toggles fullscreen too.
+These work the same in the main window and in every mirror window. Double-clicking the
+visualization toggles fullscreen too.
 
 Menu equivalents exist for preset navigation (⌘→ / ⌘← / ⌘R) and audio source selection
 (**Audio** menu).

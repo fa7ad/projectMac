@@ -137,8 +137,9 @@ must only happen on the main thread.
 
 - **`ProjectMGLView`** (`Rendering/ProjectMGLView.swift`): an `NSOpenGLView` subclass
   owning the `projectm_handle`, the `CVDisplayLink`, and input handling: keyboard
-  shortcuts (`N`/`P`/`R`/`F`/`D`/`Q`/arrows/Escape) plus double-click to toggle
-  fullscreen. Wrapped for SwiftUI via
+  shortcuts (`N`/`P`/`R`/`F`/`D`/`Q`/arrows/Escape, handled by the shared
+  `handleVisualizerKey` in `Rendering/VisualizerKeys.swift`, which mirror windows call too) plus
+  double-click to toggle fullscreen. Wrapped for SwiftUI via
   `ProjectMViewRepresentable`. `projectm_set_fps` is set once to a fixed `60` at
   creation, it's purely informational (fed to presets for their own calculations) and
   doesn't throttle the actual render cadence, which `CVDisplayLink` drives at the
@@ -153,9 +154,19 @@ must only happen on the main thread.
   render thread blits an aspect-*fill* (centre-cropped) copy into each mirror, under
   that mirror's context lock, with swap interval 0 so a second vsync can't stall the
   render thread. The scene renders once at the main window's size (a bigger mirror
-  upscales it); with `borderlessFullscreen` (Settings) `F`/double-click on a mirror instead
+  upscales it); with `borderlessMode` (Settings: off / mirrors and span windows / all windows) `F`/double-click on a mirror instead
   resizes it to the whole screen frame at `.mainMenu + 1` (covers the notch; `MirrorWindow`
-  overrides `canBecomeKey` and re-takes first responder, or `F` stops working); presets, audio and OSC stay single. Mirrors aren't persisted.
+  overrides `canBecomeKey` and re-takes first responder, or `F` stops working); presets, audio and OSC stay single. Mirrors aren't persisted. The *main* window gets
+  borderless the same way, indirectly (`toggleMainFullscreen`; only in "all windows" mode, otherwise
+  it uses native fullscreen): it's a SwiftUI window, so it
+  can't be made `.borderless` and still be key, and a titled window can't cover the notch band
+  (AppKit keeps it below it). So a borderless `MirrorWindow` (`isMainCover`) covers the main
+  window's display showing its slice of the scene, and the main window stays underneath;
+  closing the cover leaves "fullscreen". `ProjectMGLView` answers `toggleFullScreen:` itself and rebinds the green
+  button, so the View menu item and the button follow the setting like F and double-click do. The overlays (`VisualizerOverlays`: debug, loading, audio error)
+  are shown over it by a transparent child window hosting the same SwiftUI view, centred (a
+  subview over an `NSOpenGLView` ends up under its surface, and a hosting view as the child's
+  content view would shrink the window to its content, hence the container view).
   **Span mode** (Display > Span Across Displays, `MirrorController.setSpan`): the scene becomes
   one canvas; each display gets a `SceneRegion` slice of it, per the "Span layout" setting
   (`spanLayout`): `displays` (default) puts displays side by side at equal height, ordered by
@@ -165,8 +176,14 @@ must only happen on the main thread.
   physical sizes (no mm-based layout; judged not worth it). Span mode
   adopts the mirror windows the user opened on each other display (workflow: open mirrors,
   fullscreen them, fullscreen the main window, then span; `releaseSpanWindows` gives adopted
-  windows their whole picture back) and only creates its own borderless window for a display
-  with none. Per-display sizing (Settings > Span tuning, keyed by `NSScreen.spanKey`, a
+  windows their whole picture back) and only creates its own mirror for a display
+  with none (`isSpanOwned`). That one is an ordinary mirror in every respect except that span
+  closes it: it enters fullscreen through the same `toggleFullScreen` override, so the
+  borderless setting decides borderless vs native Space (native leaves the black band under
+  the notch), it follows the setting when flipped, and `F`/`Esc` work on it). `buildSpan` reconciles windows against
+  one signature (layout, frames, tuning, adoptable mirrors, declined displays), so re-slicing
+  never recreates windows needlessly. If the user closes a mirror while spanning, that display
+  is "declined" (`spanDeclined`) and gets no replacement until span is toggled off and on. Per-display sizing (Settings > Span tuning, keyed by `NSScreen.spanKey`, a
   display UUID), applied in `tuned(_:screens:)`: first an automatic real-size factor
   (`physicalFactors`, from each display's reported EDID width per point, reference = the
   display with the smallest points; off via `spanPhysicalSize`, skipped if any display reports

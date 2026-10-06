@@ -19,6 +19,7 @@
 		3DE2C4C912ED61FD5722AA03 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3AB3F22010C317AB17582469 /* Assets.xcassets */; };
 		444B67325ED7FD0314F7BF9F /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD944B278F01FC34CFD00CBE /* Accelerate.framework */; };
 		50E27854596574FBE2270B60 /* AppIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28D2B60387ECABB2F5434E53 /* AppIdentity.swift */; };
+		588750D79FB037EEF332D945 /* VisualizerKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59E583C9E4C2FFC812192FA /* VisualizerKeys.swift */; };
 		58ADFD0B2464A3F66BF41004 /* ProjectMViewRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B46DA5167DA290CB71BBC15 /* ProjectMViewRepresentable.swift */; };
 		5D7B5C7235860EA14C7C19EE /* SceneReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1285155A06E8113348983C75 /* SceneReducer.swift */; };
 		624780E650A39E063138FCAB /* DebugOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEC64E855BEE28F22E040271 /* DebugOverlayView.swift */; };
@@ -50,6 +51,7 @@
 		C4892C6EB0B0B26520D77C05 /* ProcessTapController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7291DF9CE47D314A3CE4ADA1 /* ProcessTapController.swift */; };
 		C825F0DCEFBF2937F764149F /* BpmDetectionOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 797457B9B39A919A8D352322 /* BpmDetectionOptions.swift */; };
 		CC945B35F6947B503B596A26 /* FourierFilterbank.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85176C961954F54AF11FBA3A /* FourierFilterbank.swift */; };
+		CFAF9D33751F458318BD2D1B /* VisualizerOverlays.swift in Sources */ = {isa = PBXBuildFile; fileRef = B13EB5C0E260289C8FD9C1BB /* VisualizerOverlays.swift */; };
 		E0E1CD47173C35CC8F801558 /* CursorAutoHider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0F176F34F3E92FE7A0041AC /* CursorAutoHider.swift */; };
 		E9A2EBBBF60909487B2EB760 /* ACFCombFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C144A6AAD8646090830A8D1 /* ACFCombFilter.swift */; };
 		EE1CB4BFFC72DD4F43A987A1 /* BpmDetection+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2BB90199D4DA210739264D0 /* BpmDetection+Live.swift */; };
@@ -93,6 +95,7 @@
 		A82DED4C8A9EB5ACD4DB25B8 /* MirrorController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MirrorController.swift; sourceTree = "<group>"; };
 		AF78C6F4BF9E74DF14EA2A10 /* PresetMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresetMenu.swift; sourceTree = "<group>"; };
 		AFB7C76485D87754950E3DFD /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
+		B13EB5C0E260289C8FD9C1BB /* VisualizerOverlays.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualizerOverlays.swift; sourceTree = "<group>"; };
 		B7586C03F8E60484DBB54590 /* AppSettingsKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettingsKeys.swift; sourceTree = "<group>"; };
 		BAF9D0BB5268928FE1A815AE /* BeatDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeatDetector.swift; sourceTree = "<group>"; };
 		BFBA9F904AD2E8025ADCF297 /* BpmDetection+Estimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BpmDetection+Estimation.swift"; sourceTree = "<group>"; };
@@ -106,6 +109,7 @@
 		DD944B278F01FC34CFD00CBE /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		E0EF34A472A572AAA4B7C0C2 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		E0F176F34F3E92FE7A0041AC /* CursorAutoHider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorAutoHider.swift; sourceTree = "<group>"; };
+		E59E583C9E4C2FFC812192FA /* VisualizerKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualizerKeys.swift; sourceTree = "<group>"; };
 		EBE1244B292E31110D11ECF0 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		EEC64E855BEE28F22E040271 /* DebugOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugOverlayView.swift; sourceTree = "<group>"; };
 		F7968EDB2F208EA5D68D2F53 /* AppCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCoordinator.swift; sourceTree = "<group>"; };
@@ -265,6 +269,8 @@
 				8678923C4766918FDA5E2909 /* ProjectMGLView.swift */,
 				9B46DA5167DA290CB71BBC15 /* ProjectMViewRepresentable.swift */,
 				CD6CD11FFE8191893B65C0E2 /* SpanTestPattern.swift */,
+				E59E583C9E4C2FFC812192FA /* VisualizerKeys.swift */,
+				B13EB5C0E260289C8FD9C1BB /* VisualizerOverlays.swift */,
 			);
 			path = Rendering;
 			sourceTree = "<group>";
@@ -422,6 +428,8 @@
 				B60FD5BA15FC852F8AB60474 /* SpanTestPattern.swift in Sources */,
 				FC1F2EA4F65EB06426AFA962 /* TapResources.swift in Sources */,
 				7D7EABD0BB04677C0F44C226 /* VisualOnsetDetector.swift in Sources */,
+				588750D79FB037EEF332D945 /* VisualizerKeys.swift in Sources */,
+				CFAF9D33751F458318BD2D1B /* VisualizerOverlays.swift in Sources */,
 				99709582C3F5C74A40808FFC /* projectMacApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

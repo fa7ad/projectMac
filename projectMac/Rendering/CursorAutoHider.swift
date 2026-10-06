@@ -23,13 +23,8 @@ final class CursorAutoHider {
         guard defaults.bool(forKey: AppSettingsKeys.hideIdleCursor) else { return }
         let delay = max(0.5, defaults.double(forKey: AppSettingsKeys.hideCursorDelay))
         timer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak view] _ in
-            guard let window = view?.window, Self.isFullscreen(window) else { return }
+            guard let window = view?.window, window.isVisualizerFullscreen else { return }
             NSCursor.setHiddenUntilMouseMoves(true)
         }
-    }
-
-    private static func isFullscreen(_ window: NSWindow) -> Bool {
-        window.styleMask.contains(.fullScreen)
-            || (window.styleMask == .borderless && window.frame == window.screen?.frame)
     }
 }

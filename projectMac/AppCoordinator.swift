@@ -45,6 +45,7 @@ final class AppCoordinator {
     /// that load too.
     func attach(presetManager: PresetManager) {
         self.presetManager = presetManager
+        mirrorController.coordinator = self
         mirrorController.onSpanChanged = { [weak self] on in self?.isSpanning = on }
         presetManager.onPresetChanged = { [weak self] name in
             self?.renderStats.presetName = name

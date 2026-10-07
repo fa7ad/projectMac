@@ -158,11 +158,24 @@ struct SettingsView: View {
         Form {
             Section("OSC") {
                 Toggle("Broadcast", isOn: $broadcastSceneStream)
+                if broadcastSceneStream { oscStatus }
                 TextField("Receiver", text: $oscDestination, prompt: Text("ip:port"))
                     .autocorrectionDisabled()
                 hint("IPv4 address and UDP port of the OSC receiver: 127.0.0.1:9000 for this Mac, or a device on your network.")
             }
         }
+    }
+
+    /// Same source the debug overlay reads; `sceneStream` stays nil until the first frame is sent.
+    private var oscStatus: some View {
+        let stats = coordinator.renderStats
+        let (text, color): (String, Color) =
+            if let error = stats.sceneStreamError { (error, .red) }
+            else if stats.sceneStream == nil { ("Waiting for frames", .secondary) }
+            else { ("Sending", .green) }
+        return Label(text, systemImage: "circle.fill")
+            .font(.caption)
+            .foregroundStyle(color)
     }
 
     private func hint(_ text: String) -> some View {

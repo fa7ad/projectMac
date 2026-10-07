@@ -56,10 +56,15 @@ final class SceneStreamBroadcaster: @unchecked Sendable {
     let lastError = Mutex<String?>(nil)
 
     init() {
-        fd = socket(AF_INET, SOCK_DGRAM, 0)
+        fd = Self.makeSocket()
         guard fd >= 0 else {
             fatalError("failed to create SceneStreamBroadcaster socket: \(String(cString: strerror(errno)))")
         }
+    }
+
+    private static func makeSocket() -> Int32 {
+        let fd = socket(AF_INET, SOCK_DGRAM, 0)
+        guard fd >= 0 else { return fd }
         // Non-blocking: a send the network can't take right now is dropped, never
         // stalls the queue (a blocked sendto used to freeze the whole stream).
         _ = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK)
@@ -68,6 +73,7 @@ final class SceneStreamBroadcaster: @unchecked Sendable {
         // ~12 datagrams/frame at 60fps; the default buffer overflows on slow links (Wi-Fi).
         var sndbuf: Int32 = 256 * 1024
         setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &sndbuf, socklen_t(MemoryLayout<Int32>.size))
+        return fd
     }
 
     /// Safe to call from any thread; takes effect on the next send. `host` must be an
@@ -130,9 +136,20 @@ final class SceneStreamBroadcaster: @unchecked Sendable {
             }
             // EAGAIN = send buffer momentarily full: an intended drop, not an error
             // (the next frame resends everything), so don't surface it in the UI.
-            if result < 0, errno != EAGAIN {
-                failure = String(cString: strerror(errno))
+            let err = errno
+            if result < 0, err != EAGAIN {
+                failure = String(cString: strerror(err))
                 self.logger.debug("send failed: \(failure!)")
+                // The socket caches its route, and after a network change (sleep/wake,
+                // Wi-Fi roam, VPN) that route can go stale and fail every send until the
+                // socket is closed. Rebuild it so the next frame looks the route up again.
+                if [EHOSTUNREACH, ENETUNREACH, ENETDOWN, EADDRNOTAVAIL].contains(err) {
+                    let fresh = Self.makeSocket()
+                    if fresh >= 0 {
+                        close(self.fd)
+                        self.fd = fresh
+                    }
+                }
             }
             self.lastError.withLock { $0 = failure.map { "OSC send failed: \($0)" } }
         }

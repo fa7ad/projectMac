@@ -224,7 +224,7 @@ final class MirrorController: @unchecked Sendable {
         guard let mainView, let mainScreen = mainView.window?.screen, screens.count > 1 else { return endSpan() }
         let defaults = UserDefaults.standard
         let layout = defaults.string(forKey: AppSettingsKeys.spanLayout) ?? "displays"
-        let tuning = screens.map { s in let t = Self.tuning(for: s); return "\(t.scale),\(t.offset)" }.joined(separator: "|")
+        let tuning = screens.map { s in let t = Self.tuning(for: s); return "\(t.scale),\(t.offset),\(t.offsetX)" }.joined(separator: "|")
         let adoptable = screens.map { adoptableMirrors(on: $0).map { ObjectIdentifier($0).hashValue } }
         let signature = "\(layout)|\(screens.map(\.frame))|\(mainScreen.frame)|\(tuning)|\(Self.physicalFactors(for: screens))|\(adoptable)|\(spanDeclined.sorted())"
         guard signature != spanSignature else { return }
@@ -277,12 +277,15 @@ final class MirrorController: @unchecked Sendable {
         onSpanChanged?(true)
     }
 
-    /// A display's span tuning from Settings: picture size (1 = as laid out) and vertical shift.
-    private static func tuning(for screen: NSScreen) -> (scale: Double, offset: Double) {
+    /// A display's span tuning from Settings: picture size (1 = as laid out), vertical shift,
+    /// and horizontal shift (moving a slice away from its neighbour skips the canvas hidden
+    /// behind the bezels).
+    private static func tuning(for screen: NSScreen) -> (scale: Double, offset: Double, offsetX: Double) {
         let defaults = UserDefaults.standard
         let scale = defaults.double(forKey: AppSettingsKeys.spanScaleKey(screen.spanKey))
         let offset = defaults.double(forKey: AppSettingsKeys.spanOffsetKey(screen.spanKey))
-        return (scale > 0 ? min(max(scale, 0.5), 2) : 1, min(max(offset, -0.5), 0.5))
+        let offsetX = defaults.double(forKey: AppSettingsKeys.spanOffsetXKey(screen.spanKey))
+        return (scale > 0 ? min(max(scale, 0.5), 2) : 1, min(max(offset, -0.5), 0.5), min(max(offsetX, -0.5), 0.5))
     }
 
     /// How many canvas units each display must cover for things to be the same physical size
@@ -307,8 +310,8 @@ final class MirrorController: @unchecked Sendable {
     /// rectangle grows away from the seam, from the edge facing the middle of the arrangement,
     /// so it keeps touching its neighbour; vertically it grows upward from its bottom edge
     /// (displays usually share a bottom line, which is how macOS arranges them by default),
-    /// then shifts by `offset`. (With three or more displays the middle ones can overlap a
-    /// neighbour slightly.)
+    /// then shifts by `offset` and `offsetX`. (With three or more displays the middle ones can
+    /// overlap a neighbour slightly.)
     private static func tuned(_ rects: [CGRect], screens: [NSScreen]) -> [CGRect] {
         let middle = rects.dropFirst().reduce(rects[0]) { $0.union($1) }.midX
         let physical = physicalFactors(for: screens)
@@ -316,7 +319,7 @@ final class MirrorController: @unchecked Sendable {
             let (screen, r) = pair
             let t = tuning(for: screen)
             let size = CGSize(width: r.width * factor / t.scale, height: r.height * factor / t.scale)
-            let x = r.midX < middle ? r.maxX - size.width : r.minX
+            let x = (r.midX < middle ? r.maxX - size.width : r.minX) + t.offsetX * r.width
             return CGRect(origin: CGPoint(x: x, y: r.minY + t.offset * r.height), size: size)
         }
     }

@@ -187,7 +187,7 @@ must only happen on the main thread.
   display UUID), applied in `tuned(_:screens:)`: first an automatic real-size factor
   (`physicalFactors`, from each display's reported EDID width per point, reference = the
   display with the smallest points; off via `spanPhysicalSize`, skipped if any display reports
-  no size), then the user's picture size and vertical shift on top. Slices grow away from the
+  no size), then the user's picture size and vertical and horizontal shift on top (horizontal shift is the bezel/gap compensation: canvas between shifted slices is simply not shown). Slices grow away from the
   seam horizontally and upward from the bottom edge vertically (arrangements are
   bottom-aligned by default; growing about the centre made a 90% size need a +5% shift); a tuning-only change moves slices without rebuilding windows. The main
   window draws its own slice (`ProjectMGLView` reads `mirrorController.mainRegion`/`spanCanvas`

@@ -132,7 +132,7 @@ struct SettingsView: View {
             }
             if screens.count > 1 {
                 Section("Tuning") {
-                    hint("Trim each display with Display > Span Test Pattern: lines should continue across the gap. Lower picture size makes the picture smaller on that display.")
+                    hint("Trim each display with Display > Span Test Pattern: lines should continue across the gap. Lower picture size makes the picture smaller on that display. Shift a display away from its neighbour to hide the picture behind the bezels.")
                     ForEach(screens, id: \.spanKey) { screen in
                         SpanTuningRow(name: screen.localizedName, key: screen.spanKey)
                     }
@@ -202,11 +202,13 @@ private struct SpanTuningRow: View {
     let name: String
     @AppStorage private var scale: Double
     @AppStorage private var offset: Double
+    @AppStorage private var offsetX: Double
 
     init(name: String, key: String) {
         self.name = name
         _scale = AppStorage(wrappedValue: 1.0, AppSettingsKeys.spanScaleKey(key))
         _offset = AppStorage(wrappedValue: 0.0, AppSettingsKeys.spanOffsetKey(key))
+        _offsetX = AppStorage(wrappedValue: 0.0, AppSettingsKeys.spanOffsetXKey(key))
     }
 
     var body: some View {
@@ -214,11 +216,12 @@ private struct SpanTuningRow: View {
             HStack {
                 Text(name).fontWeight(.semibold)
                 Spacer()
-                Button("Reset") { scale = 1; offset = 0 }
-                    .disabled(scale == 1 && offset == 0)
+                Button("Reset") { scale = 1; offset = 0; offsetX = 0 }
+                    .disabled(scale == 1 && offset == 0 && offsetX == 0)
             }
             row("Picture size", value: $scale, range: 0.7...1.3, text: String(format: "%.0f%%", scale * 100))
             row("Vertical shift", value: $offset, range: -0.25...0.25, text: String(format: "%+.1f%%", offset * 100))
+            row("Horizontal shift", value: $offsetX, range: -0.25...0.25, text: String(format: "%+.1f%%", offsetX * 100))
         }
     }
 

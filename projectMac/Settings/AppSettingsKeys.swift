@@ -31,11 +31,13 @@ enum AppSettingsKeys {
     static let hideCursorDelay = "hideCursorDelay" // seconds
     static let spanLayout = "spanLayout" // "displays" | "arrangement"
     static let renderScale = "renderScale" // scene pixels per window pixel (0.5...2)
-    /// Per-display span tuning, keyed by `NSScreen.spanKey`: how big that display's picture is
-    /// (1 = as laid out) and its vertical shift as a fraction of its height.
     static let spanPhysicalSize = "spanPhysicalSize" // start from the displays' real sizes (default on)
+    /// Per-display span tuning, keyed by `NSScreen.spanKey`: how big that display's picture is
+    /// (1 = as laid out), its vertical shift as a fraction of its height, and its horizontal
+    /// shift (bezels and gaps) as a fraction of its width.
     static func spanScaleKey(_ display: String) -> String { "spanScale.\(display)" }
     static func spanOffsetKey(_ display: String) -> String { "spanOffset.\(display)" }
+    static func spanOffsetXKey(_ display: String) -> String { "spanOffsetX.\(display)" }
     static let defaultOSCDestination = "127.0.0.1:9000"
 
     static var defaults: [String: Any] {[
